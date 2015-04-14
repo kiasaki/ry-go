@@ -1,27 +1,31 @@
 package main
 
 import (
+	"log"
 	"time"
 
 	"github.com/kiasaki/ry/frontends"
 )
 
 func main() {
-	frontend := frontends.TermboxFrontend{}
+	editor := NewEditor(frontends.TermboxFrontend{})
 
-	err := frontend.Init()
+	err := editor.Init()
 	if err != nil {
 		panic(err)
 	}
-	defer frontend.Close()
+	defer editor.Close()
 
-	i := 9
-	for i > 0 {
-		frontend.SetCell(1, 1, ':', frontends.ColorMagenta, frontends.ColorDefault)
-		frontend.SetCell(2, 1, ')', frontends.ColorMagenta, frontends.ColorDefault)
-		frontend.SetCell(1, 4, rune(i+64), frontends.ColorCyan, frontends.ColorWhite)
-		frontend.Flush()
-		time.Sleep(1 * time.Second)
-		i -= 1
+	// debuging
+	go func() {
+		time.Sleep(10 * time.Second)
+		// close before writing to stdout
+		editor.Close()
+		log.Fatal("Timeout")
+	}()
+
+	for editor.Running {
+		editor.Update()
+		editor.Draw()
 	}
 }

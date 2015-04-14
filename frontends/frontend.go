@@ -26,4 +26,6 @@ const (
 
 type Event interface {
 	Type() EventType
+	Width() int
+	Height() int
 }

@@ -26,3 +26,11 @@ func (e TermboxEvent) Type() EventType {
 		return EventNone
 	}
 }
+
+func (e TermboxEvent) Height() int {
+	return e.tbEvent.Height
+}
+
+func (e TermboxEvent) Width() int {
+	return e.tbEvent.Width
+}
