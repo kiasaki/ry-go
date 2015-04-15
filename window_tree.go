@@ -59,8 +59,23 @@ func (wt *WindowTree) TopLeftMostWindow() *Window {
 
 func (wt *WindowTree) Draw(f frontends.Frontend, r Rect) {
 	window := wt.Leaf
+
+	// draw line numbers
+	lineCount := window.Buffer.LineCount()
+	numberGutterWidth := len(strconv.Itoa(lineCount))
+	for y := r.Y; y < r.Y2()-1; y++ {
+		drawBytes(f, NewRect(r.X, y, numberGutterWidth, 1), []byte(strconv.Itoa(y)), frontends.ColorYellow, frontends.ColorDefault, TextAlignRight)
+	}
+
+	// draw place holders for non lines
+	if lineCount < r.Height {
+
+	}
+
+	// draw footer
 	fillRect(f, NewRect(r.X, r.Y2()-1, r.Width, 1), ' ', frontends.ColorWhite, frontends.ColorBlue)
 
+	// draw footer txt
 	bufferName := []byte(window.Buffer.Name)
 	statusLine := []byte("(" + strings.Join(window.Buffer.ModeNames(), ", ") +
 		") (" + strconv.Itoa(window.CursorX) + ", " + strconv.Itoa(window.CursorY) + ")")

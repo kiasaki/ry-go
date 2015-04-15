@@ -31,7 +31,7 @@ func main() {
 
 	// debuging
 	go func() {
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 		// close before writing to stdout
 		editor.Close()
 		log.Fatal("Timeout")
