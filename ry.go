@@ -25,6 +25,9 @@ func main() {
 		}
 		editor.AppendBuffer(buffer)
 	}
+	if len(editor.Buffers) == 0 {
+		editor.AppendBuffer(editor.NewEmptyBuffer())
+	}
 
 	// debuging
 	go func() {
@@ -39,6 +42,7 @@ func main() {
 		for {
 			ev, err := editor.Frontend.PollEvent()
 			if err != nil {
+				editor.Close()
 				panic(err)
 			}
 			c <- ev

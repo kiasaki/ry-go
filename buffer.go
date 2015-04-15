@@ -5,6 +5,7 @@ import (
 )
 
 type Buffer struct {
+	Modes    Modes
 	Name     string
 	Filepath string
 	Contents []byte
@@ -14,7 +15,9 @@ type Buffer struct {
 type Buffers []*Buffer
 
 func NewBuffer(name, filepath string) *Buffer {
+	basicMode := NewBasicMode()
 	return &Buffer{
+		Modes:    Modes{&basicMode},
 		Name:     name,
 		Filepath: filepath,
 		Changed:  false,

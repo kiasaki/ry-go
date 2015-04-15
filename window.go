@@ -16,24 +16,52 @@ const (
 )
 
 type WindowTree struct {
-	top         *WindowTree
-	bottom      *WindowTree
-	left        *WindowTree
-	right       *WindowTree
-	split       WindowSplit
-	leaf        *Window
+	Top         *WindowTree
+	Bottom      *WindowTree
+	Left        *WindowTree
+	Right       *WindowTree
+	Split       WindowSplit
+	Leaf        *Window
 	Editor      *Editor
 	Sizing      WindowSizing
 	SizingScale float32
 	SizingFixed int
 }
 
+func NewWindowTree(e *Editor) *WindowTree {
+	return &WindowTree{
+		Editor:      e,
+		Split:       WindowSplitLeaf,
+		Leaf:        nil,
+		Sizing:      WindowSizingScale,
+		SizingScale: 0.5,
+	}
+}
+
+func (wt *WindowTree) TopLeftMostWindow() *Window {
+	switch wt.Split {
+	case WindowSplitLeaf:
+		return wt.Leaf
+	case WindowSplitH:
+		return wt.Top.TopLeftMostWindow()
+	case WindowSplitV:
+		return wt.Left.TopLeftMostWindow()
+	}
+	return nil // should never happen
+}
+
 type Window struct {
-	Title    string
-	Filepath string
-	Modes    Modes
-	Buffer   *Buffer
-	CursorX  int
-	CursorY  int
-	Editor   *Editor
+	Buffer  *Buffer
+	CursorX int
+	CursorY int
+	Editor  *Editor
+}
+
+func NewWindow(e *Editor, b *Buffer) *Window {
+	return &Window{
+		Buffer:  b,
+		CursorX: 0,
+		CursorY: 0,
+		Editor:  e,
+	}
 }

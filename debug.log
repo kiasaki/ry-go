@@ -1,0 +1,61 @@
+(*main.Editor)(0x208288420)({
+ Running: (bool) true,
+ Buffers: (main.Buffers) (len=1 cap=1) {
+  (*main.Buffer)(0x208288240)({
+   Modes: (main.Modes) (len=1 cap=1) {
+    (*main.BasicMode)(0x20825a1d0)({
+    })
+   },
+   Name: (string) (len=9) "(scratch)",
+   Filepath: (string) "",
+   Contents: ([]uint8) <nil>,
+   Changed: (bool) false
+  })
+ },
+ WindowTree: (*main.WindowTree)(0x2082862d0)({
+  Top: (*main.WindowTree)(<nil>),
+  Bottom: (*main.WindowTree)(<nil>),
+  Left: (*main.WindowTree)(<nil>),
+  Right: (*main.WindowTree)(<nil>),
+  Split: (main.WindowSplit) 2,
+  Leaf: (*main.Window)(0x20826e000)({
+   Buffer: (*main.Buffer)(0x208288240)({
+    Modes: (main.Modes) (len=1 cap=1) {
+     (*main.BasicMode)(0x20825a1d0)({
+     })
+    },
+    Name: (string) (len=9) "(scratch)",
+    Filepath: (string) "",
+    Contents: ([]uint8) <nil>,
+    Changed: (bool) false
+   }),
+   CursorX: (int) 0,
+   CursorY: (int) 0,
+   Editor: (*main.Editor)(0x208288420)(<already shown>)
+  }),
+  Editor: (*main.Editor)(0x208288420)(<already shown>),
+  Sizing: (main.WindowSizing) 1,
+  SizingScale: (float32) 0.5,
+  SizingFixed: (int) 0
+ }),
+ ActiveWindow: (*main.Window)(0x20826e000)({
+  Buffer: (*main.Buffer)(0x208288240)({
+   Modes: (main.Modes) (len=1 cap=1) {
+    (*main.BasicMode)(0x20825a1d0)({
+    })
+   },
+   Name: (string) (len=9) "(scratch)",
+   Filepath: (string) "",
+   Contents: ([]uint8) <nil>,
+   Changed: (bool) false
+  }),
+  CursorX: (int) 0,
+  CursorY: (int) 0,
+  Editor: (*main.Editor)(0x208288420)(<already shown>)
+ }),
+ Frontend: (frontends.TermboxFrontend) {
+ },
+ EvChan: (chan frontends.Event) (cap=100) 0x208288000,
+ Height: (int) 62,
+ Width: (int) 90
+})

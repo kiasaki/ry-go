@@ -7,8 +7,14 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kiasaki/ry/frontends"
 )
+
+func DEBUG(o interface{}) {
+	logFile, _ := os.OpenFile("debug.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
+	spew.Fdump(logFile, o)
+}
 
 type Editor struct {
 	Running bool
@@ -25,13 +31,14 @@ type Editor struct {
 }
 
 func NewEditor(f frontends.Frontend) *Editor {
-	return &Editor{
+	e := &Editor{
 		Running:      false,
 		Buffers:      Buffers{},
-		WindowTree:   &WindowTree{},
 		ActiveWindow: nil,
 		Frontend:     f,
 	}
+	e.WindowTree = NewWindowTree(e)
+	return e
 }
 
 func (e *Editor) Init() error {
@@ -62,8 +69,6 @@ func (e *Editor) handleEvent(event frontends.Event) {
 	case frontends.EventKey:
 		e.handleKey(event)
 		break
-	default:
-		break
 	}
 }
 
@@ -80,7 +85,16 @@ func (e *Editor) Update() {
 
 	// if no window left, select first buffer
 	if e.ActiveWindow == nil {
-
+		topLeftWindow := e.WindowTree.TopLeftMostWindow()
+		if topLeftWindow != nil {
+			// set as active
+			e.ActiveWindow = topLeftWindow
+		} else {
+			// all windows closed, open first buffer
+			e.WindowTree.Split = WindowSplitLeaf
+			e.WindowTree.Leaf = NewWindow(e, e.Buffers[0])
+			e.ActiveWindow = e.WindowTree.Leaf
+		}
 	}
 
 	// event pooling from frontend
@@ -95,6 +109,9 @@ func (e *Editor) Update() {
 }
 
 func (e *Editor) Draw() {
+	// TODO remove debugging
+	DEBUG(e)
+
 	text := []byte(strconv.Itoa(e.Height))
 	textlen := utf8.RuneCount(text)
 	drawNFirstRunes(e.Frontend, 2, 2, textlen, frontends.ColorWhite, frontends.ColorDefault, text)
@@ -121,7 +138,7 @@ func (e *Editor) NewFileBuffer(path string) (*Buffer, error) {
 	}
 }
 
-func (e *Editor) NewEmptyBuffer(name string) *Buffer {
+func (e *Editor) NewEmptyBuffer() *Buffer {
 	return NewBuffer(e.UniqueName("(scratch)"), "")
 }
 
