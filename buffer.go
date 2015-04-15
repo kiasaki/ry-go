@@ -15,9 +15,8 @@ type Buffer struct {
 type Buffers []*Buffer
 
 func NewBuffer(name, filepath string) *Buffer {
-	basicMode := NewBasicMode()
 	return &Buffer{
-		Modes:    Modes{&basicMode},
+		Modes:    Modes{NewBasicMode()},
 		Name:     name,
 		Filepath: filepath,
 		Changed:  false,
@@ -32,4 +31,11 @@ func (b *Buffer) ReadFromDisk() error {
 	bytes, err := ioutil.ReadFile(b.Filepath)
 	b.Contents = bytes
 	return err
+}
+
+func (b *Buffer) ModeNames() (names []string) {
+	for _, mode := range b.Modes {
+		names = append(names, mode.Name())
+	}
+	return
 }

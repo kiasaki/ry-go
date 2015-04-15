@@ -1,10 +1,10 @@
-(*main.Editor)(0x208288420)({
+(*main.Editor)(0x20828c420)({
  Running: (bool) true,
  Buffers: (main.Buffers) (len=1 cap=1) {
-  (*main.Buffer)(0x208288240)({
+  (*main.Buffer)(0x20828c240)({
    Modes: (main.Modes) (len=1 cap=1) {
-    (*main.BasicMode)(0x20825a1d0)({
-    })
+    (main.BasicMode) {
+    }
    },
    Name: (string) (len=9) "(scratch)",
    Filepath: (string) "",
@@ -12,17 +12,17 @@
    Changed: (bool) false
   })
  },
- WindowTree: (*main.WindowTree)(0x2082862d0)({
+ WindowTree: (*main.WindowTree)(0x20828a2d0)({
   Top: (*main.WindowTree)(<nil>),
   Bottom: (*main.WindowTree)(<nil>),
   Left: (*main.WindowTree)(<nil>),
   Right: (*main.WindowTree)(<nil>),
   Split: (main.WindowSplit) 2,
-  Leaf: (*main.Window)(0x20826e000)({
-   Buffer: (*main.Buffer)(0x208288240)({
+  Leaf: (*main.Window)(0x208272000)({
+   Buffer: (*main.Buffer)(0x20828c240)({
     Modes: (main.Modes) (len=1 cap=1) {
-     (*main.BasicMode)(0x20825a1d0)({
-     })
+     (main.BasicMode) {
+     }
     },
     Name: (string) (len=9) "(scratch)",
     Filepath: (string) "",
@@ -31,18 +31,18 @@
    }),
    CursorX: (int) 0,
    CursorY: (int) 0,
-   Editor: (*main.Editor)(0x208288420)(<already shown>)
+   Editor: (*main.Editor)(0x20828c420)(<already shown>)
   }),
-  Editor: (*main.Editor)(0x208288420)(<already shown>),
+  Editor: (*main.Editor)(0x20828c420)(<already shown>),
   Sizing: (main.WindowSizing) 1,
   SizingScale: (float32) 0.5,
   SizingFixed: (int) 0
  }),
- ActiveWindow: (*main.Window)(0x20826e000)({
-  Buffer: (*main.Buffer)(0x208288240)({
+ ActiveWindow: (*main.Window)(0x208272000)({
+  Buffer: (*main.Buffer)(0x20828c240)({
    Modes: (main.Modes) (len=1 cap=1) {
-    (*main.BasicMode)(0x20825a1d0)({
-    })
+    (main.BasicMode) {
+    }
    },
    Name: (string) (len=9) "(scratch)",
    Filepath: (string) "",
@@ -51,11 +51,11 @@
   }),
   CursorX: (int) 0,
   CursorY: (int) 0,
-  Editor: (*main.Editor)(0x208288420)(<already shown>)
+  Editor: (*main.Editor)(0x20828c420)(<already shown>)
  }),
  Frontend: (frontends.TermboxFrontend) {
  },
- EvChan: (chan frontends.Event) (cap=100) 0x208288000,
+ EvChan: (chan frontends.Event) (cap=100) 0x20828c000,
  Height: (int) 62,
  Width: (int) 90
 })

@@ -5,4 +5,4 @@ type Mode interface {
 	Name() string
 }
 
-type Modes []*Mode
+type Modes []Mode

@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
-	"unicode/utf8"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kiasaki/ry/frontends"
@@ -112,10 +111,8 @@ func (e *Editor) Draw() {
 	// TODO remove debugging
 	DEBUG(e)
 
-	text := []byte(strconv.Itoa(e.Height))
-	textlen := utf8.RuneCount(text)
-	drawNFirstRunes(e.Frontend, 2, 2, textlen, frontends.ColorWhite, frontends.ColorDefault, text)
-
+	r := NewRect(0, 0, e.Width, e.Height-1)
+	e.WindowTree.Draw(e.Frontend, r)
 	e.Frontend.Flush()
 }
 
