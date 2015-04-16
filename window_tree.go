@@ -58,18 +58,33 @@ func (wt *WindowTree) TopLeftMostWindow() *Window {
 }
 
 func (wt *WindowTree) Draw(f frontends.Frontend, r Rect) {
+	// TODO do not asume we only have a leaf at root (multiple windows will come)
 	window := wt.Leaf
 
-	// draw line numbers
 	lineCount := window.Buffer.LineCount()
 	numberGutterWidth := len(strconv.Itoa(lineCount))
-	for y := r.Y; y < r.Y2()-1; y++ {
-		drawBytes(f, NewRect(r.X, y, numberGutterWidth, 1), []byte(strconv.Itoa(y)), frontends.ColorYellow, frontends.ColorDefault, TextAlignRight)
+
+	// display cursor if this is the active window
+	if wt.Editor.ActiveWindow == window {
+		f.SetCursor(window.CursorX+numberGutterWidth+1, window.CursorY)
+	}
+
+	// draw lines (numbers and contents)
+	offset := r.X + numberGutterWidth + 1
+	for i := 0; i < window.Buffer.LineCount()-1 && i < r.Height; i++ {
+		// line number
+		drawBytes(f, NewRect(r.X, r.Y+i, numberGutterWidth, 1), []byte(strconv.Itoa(i+1)),
+			frontends.ColorYellow, frontends.ColorDefault, TextAlignRight)
+		// line contents
+		line := window.Buffer.Lines[i]
+		drawBytes(f, NewRect(offset, r.Y+i, r.Width-offset, 1), line.Contents,
+			frontends.ColorWhite, frontends.ColorDefault, TextAlignLeft)
 	}
 
 	// draw place holders for non lines
-	if lineCount < r.Height {
-
+	// TODO this if is a bit naive (chack cases with scrolling and scroll padding)
+	for y := r.Y + window.Buffer.LineCount() - 1; y < r.Y2()-1; y++ {
+		f.SetCell(r.X, y, '~', frontends.ColorYellow, frontends.ColorDefault)
 	}
 
 	// draw footer
