@@ -23,6 +23,11 @@ type Editor struct {
 	ActiveWindow *Window
 	Frontend     frontends.Frontend
 
+	StatusLeft       []byte
+	StatusLeftStyle  frontends.Attribute
+	StatusRight      []byte
+	StatusRightStyle frontends.Attribute
+
 	EvChan chan (frontends.Event)
 
 	Height int
@@ -59,6 +64,10 @@ func (e *Editor) Close() error {
 	return nil
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Update / Handle / Draw loop
+///////////////////////////////////////////////////////////////////////////////
+
 func (e *Editor) handleEvent(event frontends.Event) {
 	switch event.Type() {
 	case frontends.EventResize:
@@ -72,7 +81,7 @@ func (e *Editor) handleEvent(event frontends.Event) {
 }
 
 func (e *Editor) handleKey(event frontends.Event) {
-
+	e.ActiveWindow.Buffer.MajorMode().HandleKey(e, event)
 }
 
 func (e *Editor) Update() {
@@ -111,10 +120,37 @@ func (e *Editor) Draw() {
 	// TODO remove debugging
 	DEBUG(e)
 
+	// status bar
+	statusBarRect := NewRect(0, e.Height-1, e.Width/2, 1)
+	drawBytes(e.Frontend, statusBarRect, e.StatusLeft,
+		e.StatusLeftStyle, frontends.ColorDefault, TextAlignLeft)
+	drawBytes(e.Frontend, statusBarRect.SetX(e.Width/2), e.StatusRight,
+		e.StatusRightStyle, frontends.ColorDefault, TextAlignRight)
+
+	// windows
 	r := NewRect(0, 0, e.Width, e.Height-1)
 	e.WindowTree.Draw(e.Frontend, r)
+
 	e.Frontend.Flush()
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Status bar
+///////////////////////////////////////////////////////////////////////////////
+
+func (e *Editor) SetStatusLeft(b []byte, fg frontends.Attribute) {
+	e.StatusLeft = b
+	e.StatusLeftStyle = fg
+}
+
+func (e *Editor) SetStatusRight(b []byte, fg frontends.Attribute) {
+	e.StatusRight = b
+	e.StatusRightStyle = fg
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Creatings buffers
+///////////////////////////////////////////////////////////////////////////////
 
 func (e *Editor) NewFileBuffer(path string) (*Buffer, error) {
 	path = substituteHome(path)

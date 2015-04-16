@@ -44,7 +44,9 @@ func (TermboxFrontend) PollEvent() (Event, error) {
 	event := termbox.PollEvent()
 	switch event.Type {
 	case termbox.EventKey:
+		return NewTermboxEvent(event), nil
 	case termbox.EventResize:
+		return NewTermboxEvent(event), nil
 	case termbox.EventMouse:
 		return NewTermboxEvent(event), nil
 	case termbox.EventError:

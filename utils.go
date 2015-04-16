@@ -36,6 +36,10 @@ func (r Rect) Y2() int {
 	return r.Y + r.Height
 }
 
+func (r Rect) SetX(x int) Rect {
+	return NewRect(x, r.Y, r.Width, r.Height)
+}
+
 func (r Rect) SetY(y int) Rect {
 	return NewRect(r.X, y, r.Width, r.Height)
 }

@@ -22,13 +22,15 @@ type Buffer struct {
 type Buffers []*Buffer
 
 func NewBuffer(name, filepath string) *Buffer {
-	return &Buffer{
-		Modes:    Modes{NewBasicMode()},
+	b := Buffer{
+		Modes:    Modes{},
 		Name:     name,
 		Filepath: filepath,
 		Lines:    []*Line{},
 		Changed:  false,
 	}
+	b.Modes = append(b.Modes, NewNormalMode(&b))
+	return &b
 }
 
 func (b *Buffer) Saveable() bool {
@@ -57,6 +59,10 @@ func (b *Buffer) ModeNames() (names []string) {
 		names = append(names, mode.Name())
 	}
 	return
+}
+
+func (b *Buffer) MajorMode() Mode {
+	return b.Modes[0]
 }
 
 func (b *Buffer) LineCount() int {

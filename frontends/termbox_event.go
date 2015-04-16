@@ -14,6 +14,10 @@ func NewTermboxEvent(event termbox.Event) TermboxEvent {
 	return TermboxEvent{tbEvent: event}
 }
 
+func (e TermboxEvent) Character() rune {
+	return e.tbEvent.Ch
+}
+
 func (e TermboxEvent) Type() EventType {
 	switch e.tbEvent.Type {
 	case termbox.EventKey:

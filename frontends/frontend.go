@@ -26,6 +26,7 @@ const (
 
 type Event interface {
 	Type() EventType
+	Character() rune
 	Width() int
 	Height() int
 }
