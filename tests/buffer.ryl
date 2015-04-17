@@ -1,0 +1,3 @@
+(assert (= "#<buffer >" (make-str (make-buffer))))
+
+(assert (= "#<buffer bname>" (make-str (make-buffer "bname"))))

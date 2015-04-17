@@ -8,5 +8,5 @@ import (
 // Points, Marks, Windows and rendering to a Glisp environment for use by the
 // runtime
 func RegisterToEnv(env *glisp.Glisp) {
-
+	env.AddFunction("make-buffer", MakeBufferFunction)
 }

@@ -149,6 +149,7 @@ func main() {
 	glispext.ImportChannels(env)
 	glispext.ImportCoroutines(env)
 	glispext.ImportRegex(env)
+	ry.RegisterToEnv(env)
 
 	flag.Parse()
 	args := flag.Args()
