@@ -1,0 +1,6 @@
+(def quit-chan (make-chan))
+
+(go (begin
+  (sleep 10000)
+  (println "Timeout!")
+  (send! quit-chan '())))
