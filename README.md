@@ -1,10 +1,28 @@
 # ry
 
-_A terminal based, vi like, text editor recreation experiment_
+_a terminal based, experimental text editor, with **vi**'s modal editing and **emacs** extensibility/lispyness_
 
-Built with golang, using nsf/termbox-go
+## Introduction
 
-## Features
+Built with golang, using nsf/termbox-go. **ry** is the best of both worlds all
+with out the weight of 30 years of life. Yes, it's new code, yes it's not as proven
+and yes it doesn't support your amiga, but, given the time and the right people
+it can be part of the future. Text editor world and tooling hasn't moved much,
+but has _bitrotten_ a lot, in the past 30 years and **ry** aims at changing that
+(I am looking at make, emacs, vim).
+
+**ry** combines the _modal editing_ and _composability_ of commands from vi that
+makes our fingers happy and our productivity go up and the _extensibility_ and
+_lispyness_ of emacs.
+
+## Getting started
+
+```
+$ go get github.com/kiasaki/ry
+$ ry
+```
+
+## Todo list
 
 - [x] Opening file from command line
 - [x] Display buffer contents
