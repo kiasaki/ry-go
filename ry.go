@@ -8,5 +8,10 @@ import (
 // Points, Marks, Windows and rendering to a Lang environment for use by the
 // runtime
 func RegisterToEnv(env *syp.Lang) {
+	// Editor
+	env.AddFunction("start-editor", StartEditorFunction)
+	env.AddFunction("stop-editor", StopEditorFunction)
+
+	// Buffer
 	env.AddFunction("make-buffer", MakeBufferFunction)
 }

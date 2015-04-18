@@ -1,6 +1,12 @@
 (def quit-chan (make-chan))
 
+(defn quit []
+  (stop-editor)
+  (send! quit-chan '()))
+
 (go (begin
-  (sleep 10000)
-  (println "Timeout!")
-  (send! quit-chan '())))
+  (sleep 5000)
+  (quit)
+  (println "Timeout!")))
+
+(start-editor)

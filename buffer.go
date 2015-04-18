@@ -10,6 +10,8 @@ import (
 type SexpBuffer struct {
 	Name     string
 	Filename string
+	Point    uint32
+	Contents []byte
 }
 
 func (b SexpBuffer) SexpString() string {
