@@ -10,7 +10,7 @@ import (
 	syp "github.com/kiasaki/syp-lang/interpreter"
 )
 
-const LOCAL_DOT_FILE = ".init.ryl"
+const LOCAL_DOT_FILE = ".init.syp"
 
 func quitOnErr(message string, err error) {
 	if err != nil {
