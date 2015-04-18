@@ -2,11 +2,11 @@ build-ry:
 	go-bindata -pkg ry lisp/
 	go build -o ry cmd/ry/main.go
 
-build-ryl:
+build-ry-repl:
 	go-bindata -pkg ry lisp/
-	go build -o ryl cmd/ryl/main.go
+	go build -o ry-repl cmd/ry-repl/main.go
 
-test: build-ryl
+test: build-ry-repl
 	tests/testall.sh
 
 setup:

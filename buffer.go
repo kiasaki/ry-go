@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	glisp "github.com/kiasaki/glisp/interpreter"
+	syp "github.com/kiasaki/syp-lang/interpreter"
 )
 
 type SexpBuffer struct {
@@ -23,26 +23,26 @@ func NewSexpBuffer(name string, filename string) SexpBuffer {
 	}
 }
 
-func MakeBufferFunction(env *glisp.Glisp, fnname string,
-	args []glisp.Sexp) (glisp.Sexp, error) {
+func MakeBufferFunction(env *syp.Lang, fnname string,
+	args []syp.Sexp) (syp.Sexp, error) {
 	var name string
 	var filename string
 
 	if len(args) >= 1 {
 		switch expr := args[0].(type) {
-		case glisp.SexpStr:
+		case syp.SexpStr:
 			name = string(expr)
 		default:
-			return glisp.SexpNull, errors.New("make-buffer passed a non-string parameter 1")
+			return syp.SexpNull, errors.New("make-buffer passed a non-string parameter 1")
 		}
 	}
 
 	if len(args) >= 2 {
 		switch expr := args[1].(type) {
-		case glisp.SexpStr:
+		case syp.SexpStr:
 			filename = string(expr)
 		default:
-			return glisp.SexpNull, errors.New("make-buffer passed a non-string parameter 2")
+			return syp.SexpNull, errors.New("make-buffer passed a non-string parameter 2")
 		}
 	}
 

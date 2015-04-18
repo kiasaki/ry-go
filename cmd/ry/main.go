@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kiasaki/glisp/extensions"
-	"github.com/kiasaki/glisp/interpreter"
 	ry "github.com/kiasaki/ry"
+	sypext "github.com/kiasaki/syp-lang/extensions"
+	syp "github.com/kiasaki/syp-lang/interpreter"
 )
 
 const LOCAL_DOT_FILE = ".init.ryl"
@@ -21,13 +21,13 @@ func quitOnErr(message string, err error) {
 }
 
 func main() {
-	env := glisp.NewGlisp()
+	env := syp.NewLang()
 	env.ImportEval()
-	glispext.ImportRandom(env)
-	glispext.ImportTime(env)
-	glispext.ImportChannels(env)
-	glispext.ImportCoroutines(env)
-	glispext.ImportRegex(env)
+	sypext.ImportRandom(env)
+	sypext.ImportTime(env)
+	sypext.ImportChannels(env)
+	sypext.ImportCoroutines(env)
+	sypext.ImportRegex(env)
 	ry.RegisterToEnv(env)
 
 	args := flag.Args()

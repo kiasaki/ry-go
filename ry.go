@@ -1,12 +1,12 @@
 package ry
 
 import (
-	"github.com/kiasaki/glisp/interpreter"
+	syp "github.com/kiasaki/syp-lang/interpreter"
 )
 
 // RegisterToEnv adds all ry's go primitives realted to the Editor, Buffers,
-// Points, Marks, Windows and rendering to a Glisp environment for use by the
+// Points, Marks, Windows and rendering to a Lang environment for use by the
 // runtime
-func RegisterToEnv(env *glisp.Glisp) {
+func RegisterToEnv(env *syp.Lang) {
 	env.AddFunction("make-buffer", MakeBufferFunction)
 }
