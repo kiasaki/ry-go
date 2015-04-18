@@ -18,7 +18,7 @@ _lispyness_ of emacs.
 ## Getting started
 
 ```
-$ go get github.com/kiasaki/ry
+$ go get github.com/kiasaki/ry/cmd/ry
 $ ry
 ```
 
