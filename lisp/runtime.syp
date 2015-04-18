@@ -4,9 +4,20 @@
   (stop-editor)
   (send! quit-chan '()))
 
+
+(defn handle-keypresses []
+  (let [k (<! (editor-keypresses-chan))]
+    (set-cell 1 5 k 0 0)
+    (handle-keypresses)))
+
+;; Debugging (no way of quitting for now)
 (go (begin
   (sleep 5000)
   (quit)
   (println "Timeout!")))
 
 (start-editor)
+(clear-editor 244 234)
+(set-cell 1 4 #d 0 0)
+
+(go (handle-keypresses))

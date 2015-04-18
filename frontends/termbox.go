@@ -19,7 +19,7 @@ func (TermboxFrontend) Init() error {
 		return err
 	}
 	termbox.SetInputMode(termbox.InputAlt)
-	termbox.SetOutputMode(termbox.OutputNormal)
+	termbox.SetOutputMode(termbox.Output256)
 	return nil
 }
 

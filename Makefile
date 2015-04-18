@@ -1,4 +1,4 @@
-build-ry:
+build:
 	go-bindata -pkg ry lisp/
 	go build -o ry cmd/ry/main.go
 
