@@ -8,12 +8,14 @@ import (
 	ry "github.com/kiasaki/ry"
 	sypext "github.com/kiasaki/syp-lang/extensions"
 	syp "github.com/kiasaki/syp-lang/interpreter"
+	"github.com/nsf/termbox-go"
 )
 
 const LOCAL_DOT_FILE = ".init.syp"
 
 func quitOnErr(message string, err error) {
 	if err != nil {
+		termbox.Close()
 		fmt.Println(message)
 		fmt.Println(err)
 		os.Exit(1)
@@ -42,7 +44,7 @@ func main() {
 		quitOnErr("Failed to load runtime", err)
 	}
 
-	// load current folder's .init.ryl
+	// load current folder's .init.syp
 	file, err := os.Open(LOCAL_DOT_FILE)
 	if err != nil && !os.IsNotExist(err) {
 		quitOnErr("Error reading local "+LOCAL_DOT_FILE, err)
@@ -53,7 +55,7 @@ func main() {
 	}
 
 	// hang till exit as last expr
-	// coroutines will make this hanging in the main thred work
+	// coroutines will make this hang in the main thread util `quit` is called
 	err = env.LoadString("(<! quit-chan)")
 	quitOnErr("Error evaluating quit signal", err)
 

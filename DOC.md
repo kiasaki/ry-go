@@ -18,6 +18,8 @@
 
 `clear-editor` Fills the screen with the default background color
 
+`set-cell` Takes x, y, character, fg, bg
+
 ### Runtime (syp)
 
 `quit` Stops the editor and exits

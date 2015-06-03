@@ -2,6 +2,8 @@ package ry
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"strconv"
 	"time"
 
@@ -98,8 +100,11 @@ func processFlushUpdates() {
 	}
 }
 
-func StopEditorFunction(env *syp.Lang, fnname string,
-	args []syp.Sexp) (syp.Sexp, error) {
+func StopEditorFunction(
+	env *syp.Lang,
+	fnname string,
+	args []syp.Sexp,
+) (syp.Sexp, error) {
 	if globalEditor.Running {
 		globalEditor.Running = false
 		return syp.SexpNull, globalEditor.Frontend.Close()
@@ -141,37 +146,52 @@ func ClearEditorFunction(env *syp.Lang, fnname string,
 	return syp.SexpNull, nil
 }
 
-func SetCellFunction(env *syp.Lang, fnname string,
-	args []syp.Sexp) (syp.Sexp, error) {
+func SetCellFunction(
+	env *syp.Lang,
+	fnname string,
+	args []syp.Sexp,
+) (syp.Sexp, error) {
 	if len(args) != 5 {
 		return syp.SexpNull, syp.WrongNargs
 	}
+
 	// args 0, 1, 3 and 4 need to be ints
-	castedArgs := make([]syp.SexpInt, 5)
-	for i := 0; i < 5 && i != 2; i++ {
+	castedArgs := make([]int, 5)
+	for _, i := range []int{0, 1, 3, 4} {
 		switch expr := args[i].(type) {
 		case syp.SexpInt:
-			castedArgs[i] = expr
+			castedArgs[i] = int(expr)
 		default:
 			return syp.SexpNull, errors.New("set-cell arg #" + strconv.Itoa(i+1) + " is not an int")
 		}
 	}
 
-	var ch syp.SexpChar
+	debug("%s %s\n", int(castedArgs[3]), frontends.Attribute(castedArgs[4]))
+
+	var ch rune
 	switch expr := args[2].(type) {
 	case syp.SexpChar:
-		ch = expr
+		ch = rune(expr)
 	default:
 		return syp.SexpNull, errors.New("set-cell arg #3 is not an char")
 	}
 
 	globalEditor.Frontend.SetCell(
-		int(castedArgs[0]),
-		int(castedArgs[1]),
-		rune(ch),
+		castedArgs[0],
+		castedArgs[1],
+		ch,
 		frontends.Attribute(castedArgs[3]),
 		frontends.Attribute(castedArgs[4]),
 	)
 
 	return syp.SexpNull, nil
+}
+
+func debug(format string, attrs ...interface{}) {
+	b, err := ioutil.ReadFile("debug.txt")
+	if err != nil {
+		b = []byte{}
+	}
+	b = append(b, []byte(fmt.Sprintf(format, attrs...))...)
+	ioutil.WriteFile("debug.txt", b, 0644)
 }
