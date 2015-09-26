@@ -1,6 +1,9 @@
 package lang
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/kiasaki/sexpr"
 )
 
@@ -8,44 +11,64 @@ func ParseFile(file string) (string, error) {
 	env := &Env{nil, map[string]Value{}}
 	ast := &sexpr.AST{}
 	err := sexpr.ParseFile(ast, file, buildSyntaxParser())
-	return Read(env, ast).String(), err
+	return Read(env, ast.Root.Children)[0].String(), err
 }
 
 func Parse(code []byte) (string, error) {
 	env := &Env{nil, map[string]Value{}}
 	ast := &sexpr.AST{}
 	err := sexpr.Parse(ast, code, buildSyntaxParser())
-	return Read(env, ast).String(), err
+	return Read(env, ast.Root.Children)[0].String(), err
 }
 
-func Read(env *Env, ast *sexpr.AST) Value {
+func Read(env *Env, nodes []*sexpr.Node) []Value {
+	return readNodes(nodes)
+}
+
+func readNodes(nodes []*sexpr.Node) []Value {
 	var values = []Value{}
 
-	for _, node := range ast.Root.Children {
-		values = append(values, readASTNode(node))
+	for _, node := range nodes {
+		value := readASTNode(node)
+		if value != nil {
+			values = append(values, value)
+		}
 	}
 
-	// TODO return all
-	return values[0]
+	return values
 }
 
 func readASTNode(node *sexpr.Node) Value {
 	nodeValue := string(node.Data)
 	switch node.Type {
 	case sexpr.TokListOpen:
+		return ListValue{readNodes(node.Children)}
 	case sexpr.TokIdent:
+		return SymbolValue{nodeValue}
 	case sexpr.TokString:
+		return StringValue{nodeValue}
 	case sexpr.TokRawString:
+		return StringValue{strconv.Quote(nodeValue)}
 	case sexpr.TokChar:
+		return CharValue{[]rune(nodeValue)[0]}
 	case sexpr.TokNumber:
-	case sexpr.TokBool:
+		if strings.Contains(nodeValue, ".") {
+			if f, err := strconv.ParseFloat(nodeValue, 64); err == nil {
+				return FloatValue{f}
+			}
+		} else {
+			if i, err := strconv.ParseInt(nodeValue, 0, 64); err == nil {
+				return IntegerValue{i}
+			}
+		}
+	case sexpr.TokBoolean:
 		if nodeValue == "#t" {
 			return BoolValue{true}
 		} else {
 			return BoolValue{false}
 		}
-	default:
 	}
+	return nil
 }
 
 func buildSyntaxParser() *sexpr.Syntax {

@@ -1,5 +1,9 @@
 package lang
 
+import (
+	"strconv"
+)
+
 type ValueType int
 
 const (
@@ -22,10 +26,10 @@ type SymbolValue struct {
 	value string
 }
 
-func (SymbolValue) Type() {
+func (SymbolValue) Type() ValueType {
 	return V_SYMBOL
 }
-func (v *SymbolValue) String() {
+func (v SymbolValue) String() string {
 	return v.value
 }
 
@@ -34,10 +38,10 @@ type StringValue struct {
 	value string
 }
 
-func (StringValue) Type() {
+func (StringValue) Type() ValueType {
 	return V_STRING
 }
-func (v *StringValue) String() {
+func (v StringValue) String() string {
 	return "\"" + v.value + "\""
 }
 
@@ -46,11 +50,11 @@ type IntegerValue struct {
 	value int64
 }
 
-func (IntegerValue) Type() {
+func (IntegerValue) Type() ValueType {
 	return V_INTEGER
 }
-func (v *IntegerValue) String() {
-	return string(v.value)
+func (v IntegerValue) String() string {
+	return strconv.FormatInt(v.value, 10)
 }
 
 /* FLOAT */
@@ -58,11 +62,11 @@ type FloatValue struct {
 	value float64
 }
 
-func (FloatValue) Type() {
+func (FloatValue) Type() ValueType {
 	return V_FLOAT
 }
-func (v *FloatValue) String() {
-	return string(v.value)
+func (v FloatValue) String() string {
+	return strconv.FormatFloat(v.value, 'f', -1, 64)
 }
 
 /* CHAR */
@@ -70,10 +74,10 @@ type CharValue struct {
 	value rune
 }
 
-func (CharValue) Type() {
+func (CharValue) Type() ValueType {
 	return V_CHAR
 }
-func (v *CharValue) String() {
+func (v CharValue) String() string {
 	return "'" + string(v.value) + "'"
 }
 
@@ -82,10 +86,10 @@ type BoolValue struct {
 	value bool
 }
 
-func (BoolValue) Type() {
+func (BoolValue) Type() ValueType {
 	return V_BOOL
 }
-func (v *CharValue) String() {
+func (v BoolValue) String() string {
 	if v.value {
 		return "#t"
 	}
@@ -97,16 +101,20 @@ type ListValue struct {
 	childs []Value
 }
 
-func (ListValue) Type() {
+func (ListValue) Type() ValueType {
 	return V_BOOL
 }
-func (v *ListValue) String() {
+func (v ListValue) String() string {
 	str := "("
-	for i, c := range v.childs {
+	for i, child := range v.childs {
 		if i != 0 {
 			str = str + " "
 		}
-		str = str + c.String()
+		str = str + child.String()
 	}
 	return str + ")"
+}
+
+func NewEmptyListValue() ListValue {
+	return ListValue{childs: []Value{}}
 }
