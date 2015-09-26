@@ -1,4 +1,4 @@
-package main
+package ry
 
 import (
 	"fmt"
@@ -9,11 +9,6 @@ import (
 )
 
 var editor *Editor
-
-func main() {
-	editor = &Editor{}
-	editor.Start()
-}
 
 type Editor struct {
 	width       int
