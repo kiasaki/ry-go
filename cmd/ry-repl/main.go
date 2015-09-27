@@ -10,12 +10,13 @@ import (
 func main() {
 	prompt := "ry> "
 	scanner := uniline.DefaultScanner()
+	env := lang.NewRootEnv()
 
 	for scanner.Scan(prompt) {
 		line := scanner.Text()
 		if len(line) > 0 {
 			scanner.AddToHistory(line)
-			pr(eval(line))
+			pr(eval(env, read((line))))
 		}
 	}
 
@@ -24,12 +25,25 @@ func main() {
 	}
 }
 
-func eval(code string) string {
+func read(code string) []Value {
 	result, err := lang.Parse([]byte(code))
 	if err != nil {
 		panic(err)
 	}
 	return result
+}
+
+func eval(env *lang.Env, exprs []Value) string {
+	var lastResult Value
+
+	for _, expr := range exprs {
+		lastResult, err = lang.Eval(env, expr)
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	return lastResult.String()
 }
 
 func pr(result string) {

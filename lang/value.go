@@ -1,6 +1,7 @@
 package lang
 
 import (
+	"errors"
 	"strconv"
 )
 
@@ -14,6 +15,7 @@ const (
 	V_CHAR              = iota
 	V_BOOL              = iota
 	V_LIST              = iota
+	V_FUNC              = iota
 )
 
 type Value interface {
@@ -102,7 +104,7 @@ type ListValue struct {
 }
 
 func (ListValue) Type() ValueType {
-	return V_BOOL
+	return V_LIST
 }
 func (v ListValue) String() string {
 	str := "("
@@ -117,4 +119,43 @@ func (v ListValue) String() string {
 
 func NewEmptyListValue() ListValue {
 	return ListValue{childs: []Value{}}
+}
+
+/* FUNC */
+type FuncValue struct {
+	name string
+	fn   func([]Value) (Value, error)
+	env  *Env
+}
+
+func (FuncValue) Type() ValueType {
+	return V_FUNC
+}
+func (v FuncValue) String() string {
+	return "<fn:" + v.name + ">"
+}
+
+func (v *FuncValue) Call(args []Value, parentEnv *Env) (Value, error) {
+
+}
+
+func NewFunction(name string, fn func([]Value) (Value, error), argsNames Value) (*FuncValue, error) {
+	if name == "" {
+		name = "*lambda*"
+	}
+
+	env := NewRootEnv()
+	for _, arg := range argsNames {
+		if arg.Type() == V_SYMBOL {
+			env.Set()
+		} else {
+			return nil, errors.New("Can't define function '" + name + "' because param " + arg.String() + " is not a symbol")
+		}
+	}
+
+	return &FuncValue{
+		name: name,
+		fn:   fn,
+		env:  env,
+	}, nil
 }

@@ -7,21 +7,19 @@ import (
 	"github.com/kiasaki/sexpr"
 )
 
-func ParseFile(file string) (string, error) {
-	env := &Env{nil, map[string]Value{}}
+func ParseFile(file string) ([]Value, error) {
 	ast := &sexpr.AST{}
 	err := sexpr.ParseFile(ast, file, buildSyntaxParser())
-	return Read(env, ast.Root.Children)[0].String(), err
+	return Read(ast.Root.Children), err
 }
 
-func Parse(code []byte) (string, error) {
-	env := &Env{nil, map[string]Value{}}
+func Parse(code []byte) ([]Value, error) {
 	ast := &sexpr.AST{}
 	err := sexpr.Parse(ast, code, buildSyntaxParser())
-	return Read(env, ast.Root.Children)[0].String(), err
+	return Read(ast.Root.Children), err
 }
 
-func Read(env *Env, nodes []*sexpr.Node) []Value {
+func Read(nodes []*sexpr.Node) []Value {
 	return readNodes(nodes)
 }
 
@@ -42,7 +40,11 @@ func readASTNode(node *sexpr.Node) Value {
 	nodeValue := string(node.Data)
 	switch node.Type {
 	case sexpr.TokListOpen:
-		return ListValue{readNodes(node.Children)}
+		if nodeValue[0] == '\'' {
+			return ListValue{append([]Value{SymbolValue{"quote"}}, ListValue{readNodes(node.Children)})}
+		} else {
+			return ListValue{readNodes(node.Children)}
+		}
 	case sexpr.TokIdent:
 		return SymbolValue{nodeValue}
 	case sexpr.TokString:
@@ -77,7 +79,7 @@ func buildSyntaxParser() *sexpr.Syntax {
 	s.StringLit = []string{"\"", "\""}
 	s.RawStringLit = []string{"`", "`"}
 	s.CharLit = []string{"'", "'"}
-	s.Delimiters = [][2]string{{"(", ")"}, {"'(", ")"}}
+	s.Delimiters = [][2]string{{"(", ")"}}
 	s.NumberFunc = sexpr.LexNumber
 	s.BooleanFunc = func(l *sexpr.Lexer) int {
 		if ret := l.AcceptLiteral("#t"); ret != 0 {
