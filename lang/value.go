@@ -98,6 +98,9 @@ func (v BoolValue) String() string {
 	return "#f"
 }
 
+var BoolValueTrue BoolValue = BoolValue{true}
+var BoolValueFalse BoolValue = BoolValue{false}
+
 /* LIST */
 type ListValue struct {
 	childs []Value
@@ -123,9 +126,9 @@ func NewEmptyListValue() ListValue {
 
 /* FUNC */
 type FuncValue struct {
-	name string
-	fn   func([]Value) (Value, error)
-	env  *Env
+	name     string
+	argNames []string
+	fn       func(*Env, []Value) (Value, error)
 }
 
 func (FuncValue) Type() ValueType {
@@ -136,26 +139,41 @@ func (v FuncValue) String() string {
 }
 
 func (v *FuncValue) Call(args []Value, parentEnv *Env) (Value, error) {
+	// Create env for new func
+	env := NewRootEnv()
+	env.Parent = parentEnv
+	for i, arg := range args {
+		// TODO handle rest args
+		if i < len(v.argNames) {
+			env.Set(v.argNames[i], arg)
+		}
+	}
 
+	return v.fn(env, args)
 }
 
-func NewFunction(name string, fn func([]Value) (Value, error), argsNames Value) (*FuncValue, error) {
+func NewFunction(name string, fn func(*Env, []Value) (Value, error), argNames Value) (*FuncValue, error) {
 	if name == "" {
 		name = "*lambda*"
 	}
 
-	env := NewRootEnv()
-	for _, arg := range argsNames {
+	if argNames.Type() != V_LIST {
+		return nil, errors.New("Can't create a function, passed a non-list for argument names")
+	}
+
+	argNamesString := []string{}
+	for _, arg := range argNames.(ListValue).childs {
+		// TODO handle "." as rest arg
 		if arg.Type() == V_SYMBOL {
-			env.Set()
+			argNamesString = append(argNamesString, arg.(SymbolValue).value)
 		} else {
 			return nil, errors.New("Can't define function '" + name + "' because param " + arg.String() + " is not a symbol")
 		}
 	}
 
 	return &FuncValue{
-		name: name,
-		fn:   fn,
-		env:  env,
+		name:     name,
+		fn:       fn,
+		argNames: argNamesString,
 	}, nil
 }

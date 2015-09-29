@@ -7,21 +7,23 @@ import (
 func Eval(val Value, env *Env) (Value, error) {
 	switch val.Type() {
 	case V_LIST:
-		evaluatedChilds = []Value{}
+		evaluatedChilds := []Value{}
 		for _, child := range val.(ListValue).childs {
 			if newChild, err := Eval(child, env); err != nil {
 				return nil, err
+			} else {
+				evaluatedChilds = append(evaluatedChilds, newChild)
 			}
-			evaluatedChilds = append(evaluatedChilds, newChild)
 		}
 
 		switch len(evaluatedChilds) {
 		case 0:
-			return val
+			return val, nil
 		case 1:
-			return val[0]
+			return evaluatedChilds[0], nil
 		default:
-			return Call(val[0], val[1:], env)
+			// TODO Check if callee is macro, if so, don't eval childs
+			return Call(evaluatedChilds[0], evaluatedChilds[1:], env)
 		}
 	case V_SYMBOL:
 		if val := env.Get(val.String()); val != nil {
@@ -35,9 +37,10 @@ func Eval(val Value, env *Env) (Value, error) {
 }
 
 func Call(fn Value, args []Value, env *Env) (Value, error) {
-	if fn.Type() != FuncValue {
+	if fn.Type() != V_FUNC {
 		return nil, errors.New("Trying to call non-function " + fn.String())
 	}
 
-	return fn.(FuncValue).Call(args, env)
+	callee := fn.(*FuncValue)
+	return callee.Call(args, env)
 }

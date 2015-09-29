@@ -10,7 +10,7 @@ import (
 func main() {
 	prompt := "ry> "
 	scanner := uniline.DefaultScanner()
-	env := lang.NewRootEnv()
+	env := lang.NewBuiltinFilledEnv()
 
 	for scanner.Scan(prompt) {
 		line := scanner.Text()
@@ -25,7 +25,7 @@ func main() {
 	}
 }
 
-func read(code string) []Value {
+func read(code string) []lang.Value {
 	result, err := lang.Parse([]byte(code))
 	if err != nil {
 		panic(err)
@@ -33,14 +33,19 @@ func read(code string) []Value {
 	return result
 }
 
-func eval(env *lang.Env, exprs []Value) string {
-	var lastResult Value
+func eval(env *lang.Env, exprs []lang.Value) string {
+	var lastResult lang.Value
+	var err error
+
+	if len(exprs) == 0 {
+		return ""
+	}
 
 	for _, expr := range exprs {
-		lastResult, err = lang.Eval(env, expr)
+		lastResult, err = lang.Eval(expr, env)
 	}
 	if err != nil {
-		panic(err)
+		return "ERROR: " + err.Error()
 	}
 
 	return lastResult.String()
