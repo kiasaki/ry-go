@@ -38,8 +38,16 @@ func NewBuiltinFilledEnv() *Env {
 	env.Set("-", builtinSubtract)
 	env.Set("*", builtinMultiply)
 	env.Set("/", builtinDivide)
+
 	env.Set("type", builtinType)
 	env.Set("eq?", builtinEq)
+
+	env.Set("list", builtinList)
+	env.Set("string", builtinString)
+
+	env.Set("define", builtinDefine)
+	env.Set("set", builtinSet)
+	env.Set("lambda", builtinLambda)
 
 	return env
 }

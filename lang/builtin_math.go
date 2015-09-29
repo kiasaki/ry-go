@@ -24,14 +24,14 @@ func builtinOp(op string, args []Value) (Value, error) {
 		var leftVal, rightVal float64
 		// make sure to case the integer if occuring
 		if left.Type() == V_INTEGER {
-			leftVal = float64(left.(IntegerValue).value)
+			leftVal = float64(left.(IntegerValue).Value)
 		} else {
-			leftVal = left.(FloatValue).value
+			leftVal = left.(FloatValue).Value
 		}
 		if right.Type() == V_INTEGER {
-			rightVal = float64(right.(IntegerValue).value)
+			rightVal = float64(right.(IntegerValue).Value)
 		} else {
-			rightVal = right.(FloatValue).value
+			rightVal = right.(FloatValue).Value
 		}
 
 		switch op {
@@ -49,8 +49,8 @@ func builtinOp(op string, args []Value) (Value, error) {
 		}
 	} else {
 		// int op
-		leftVal := left.(IntegerValue).value
-		rightVal := right.(IntegerValue).value
+		leftVal := left.(IntegerValue).Value
+		rightVal := right.(IntegerValue).Value
 
 		switch op {
 		case "+":
@@ -71,9 +71,9 @@ func builtinOp(op string, args []Value) (Value, error) {
 
 func buildBuiltinOp(op string) *FuncValue {
 	return &FuncValue{
-		name:     op,
-		argNames: []string{"left", "right"},
-		fn: func(env *Env, args []Value) (Value, error) {
+		Name:     op,
+		ArgNames: []string{"left", "right"},
+		Fn: func(env *Env, args []Value) (Value, error) {
 			return builtinOp(op, args)
 		},
 	}

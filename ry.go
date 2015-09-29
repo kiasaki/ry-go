@@ -6,7 +6,10 @@ import (
 	"time"
 
 	"github.com/jonvaldes/termo"
+	"github.com/kiasaki/ry/lang"
 )
+
+const RUNTIME_FILE = "runtime.ryl"
 
 var editor *Editor
 
@@ -14,6 +17,8 @@ type Editor struct {
 	width       int
 	height      int
 	framebuffer *termo.Framebuffer
+
+	env *lang.Env
 
 	keyChan chan (termo.ScanCode)
 	errChan chan (error)
@@ -45,6 +50,8 @@ func (e *Editor) Start() {
 	// Create frame buffer
 	e.framebuffer = termo.NewFramebuffer(e.width, e.height)
 
+	e.startLispRuntime()
+
 	e.startKeyReadLoop()
 
 	e.MainLoop()
@@ -56,6 +63,40 @@ func (e *Editor) startKeyReadLoop() {
 	e.errChan = make(chan error)
 	termo.StartKeyReadLoop(e.keyChan, e.errChan)
 	e.ticker = time.Tick(100 * time.Millisecond)
+}
+
+func (e *Editor) startLispRuntime() {
+	// Create environment
+	e.env = lang.NewBuiltinFilledEnv()
+
+	// Load runtime
+	if exprs, err := lang.ParseFile(RUNTIME_FILE); err != nil {
+		die(err)
+	} else {
+		e.EvalLispExpressions(exprs)
+	}
+
+	// Register native Go functions
+	// TODO register die func
+
+	// Call init
+	e.EvalLisp("(editor-initialize)")
+}
+
+func (e *Editor) EvalLisp(code string) {
+	if exprs, err := lang.Parse([]byte(code)); err != nil {
+		die(err)
+	} else {
+		e.EvalLispExpressions(exprs)
+	}
+}
+
+func (e *Editor) EvalLispExpressions(exprs []lang.Value) {
+	for _, expr := range exprs {
+		if _, err := lang.Eval(expr, e.env); err != nil {
+			die(err)
+		}
+	}
 }
 
 func (e *Editor) MainLoop() {
@@ -80,19 +121,20 @@ func (e *Editor) MainLoop() {
 		case s := <-e.keyChan:
 			e.handleScanCode(s)
 		case err := <-e.errChan:
-			panic(err)
+			die(err)
 		}
 	}
 }
 
 func (e *Editor) Render(f *termo.Framebuffer) {
+	e.EvalLisp("(editor-render)")
 	statusLine := []rune("--**")
-	f.AttribText(0, e.height-1, termo.CellState{
+	f.AttribText(0, e.height-2, termo.CellState{
 		termo.AttrNone,
 		termo.ColorBlack,
 		termo.ColorGray,
 	}, string(padString(statusLine, '-', e.width)))
-	f.AttribRect(0, 0, e.width, e.height-1, termo.CellState{
+	f.AttribRect(0, 0, e.width, e.height-2, termo.CellState{
 		termo.AttrNone,
 		termo.ColorGray,
 		termo.ColorBlack,
@@ -119,11 +161,4 @@ func (e *Editor) handleScanCode(s termo.ScanCode) {
 			os.Exit(0)
 		}
 	}
-}
-
-func padString(str []rune, pad rune, width int) []rune {
-	for len([]rune(str)) < width {
-		str = append(str, pad)
-	}
-	return str
 }

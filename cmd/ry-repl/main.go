@@ -28,7 +28,7 @@ func main() {
 func read(code string) []lang.Value {
 	result, err := lang.Parse([]byte(code))
 	if err != nil {
-		panic(err)
+		return []lang.Value{lang.NewSymbolValue("ERROR: " + err.Error())}
 	}
 	return result
 }

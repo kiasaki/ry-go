@@ -1,6 +1,7 @@
 package lang
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
@@ -10,67 +11,84 @@ import (
 func ParseFile(file string) ([]Value, error) {
 	ast := &sexpr.AST{}
 	err := sexpr.ParseFile(ast, file, buildSyntaxParser())
-	return Read(ast.Root.Children), err
+	if err != nil {
+		return nil, err
+	}
+	return Read(ast.Root.Children)
 }
 
 func Parse(code []byte) ([]Value, error) {
 	ast := &sexpr.AST{}
 	err := sexpr.Parse(ast, code, buildSyntaxParser())
-	return Read(ast.Root.Children), err
+	if err != nil {
+		return nil, err
+	}
+	return Read(ast.Root.Children)
 }
 
-func Read(nodes []*sexpr.Node) []Value {
+func Read(nodes []*sexpr.Node) ([]Value, error) {
 	return readNodes(nodes)
 }
 
-func readNodes(nodes []*sexpr.Node) []Value {
+func readNodes(nodes []*sexpr.Node) ([]Value, error) {
 	var values = []Value{}
 
 	for _, node := range nodes {
-		value := readASTNode(node)
+		value, err := readASTNode(node)
+		if err != nil {
+			return nil, err
+		}
 		if value != nil {
 			values = append(values, value)
 		}
 	}
 
-	return values
+	return values, nil
 }
 
-func readASTNode(node *sexpr.Node) Value {
+func readASTNode(node *sexpr.Node) (Value, error) {
 	nodeValue := string(node.Data)
 	switch node.Type {
 	case sexpr.TokListOpen:
-		if nodeValue[0] == '\'' {
-			return ListValue{append([]Value{SymbolValue{"quote"}}, ListValue{readNodes(node.Children)})}
+		if nodes, err := readNodes(node.Children); err != nil {
+			return nil, err
 		} else {
-			return ListValue{readNodes(node.Children)}
+			if nodeValue[0] == '\'' {
+				return ListValue{append([]Value{SymbolValue{"quote"}}, ListValue{nodes})}, nil
+			} else {
+				return ListValue{nodes}, nil
+			}
 		}
 	case sexpr.TokIdent:
-		return SymbolValue{nodeValue}
+		return SymbolValue{nodeValue}, nil
 	case sexpr.TokString:
-		return StringValue{nodeValue}
+		return StringValue{nodeValue}, nil
 	case sexpr.TokRawString:
-		return StringValue{strconv.Quote(nodeValue)}
+		return StringValue{strconv.Quote(nodeValue)}, nil
 	case sexpr.TokChar:
-		return CharValue{[]rune(nodeValue)[0]}
+		if len([]rune(nodeValue)) != 1 {
+			return nil, errors.New("Tried reading a char literal of 0 or more than 1 characters")
+		}
+		return CharValue{[]rune(nodeValue)[0]}, nil
 	case sexpr.TokNumber:
 		if strings.Contains(nodeValue, ".") {
 			if f, err := strconv.ParseFloat(nodeValue, 64); err == nil {
-				return FloatValue{f}
+				return FloatValue{f}, nil
 			}
 		} else {
 			if i, err := strconv.ParseInt(nodeValue, 0, 64); err == nil {
-				return IntegerValue{i}
+				return IntegerValue{i}, nil
 			}
 		}
 	case sexpr.TokBoolean:
 		if nodeValue == "#t" {
-			return BoolValue{true}
+			return BoolValueTrue, nil
 		} else {
-			return BoolValue{false}
+			return BoolValueFalse, nil
 		}
 	}
-	return nil
+
+	return nil, errors.New("Couln't parse invalid token '" + nodeValue + "'")
 }
 
 func buildSyntaxParser() *sexpr.Syntax {

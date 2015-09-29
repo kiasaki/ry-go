@@ -1,0 +1,1 @@
+(define editor-initialize (lambda ()))
