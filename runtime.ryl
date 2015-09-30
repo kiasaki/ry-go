@@ -2,16 +2,16 @@
 
 (define editor-initialize (lambda () ))
 
-(define editor-render (lambda ()
+(define (editor-render)
   (set status-bar-style (cell-style 'none 'black 'gray))
-  (set code-style (cell-style 'none 'gray 'light-black))
+  (set code-style (cell-style 'none 'gray 'black))
 
   (editor-draw-attribute-rect 0 0 (editor-width) (- (editor-height) 2) code-style)
   (editor-draw-attribute-rect 0 (- (editor-height) 1) (editor-width) 1 code-style)
   (editor-draw-attribute-rect 0 (- (editor-height) 2) (editor-width) 1 status-bar-style)
 
   (editor-draw-text 0 (- (editor-height) 2) status-bar-style status-bar-text)
-  (editor-draw-text 0 0 code-style "Lorem ipsum las dolor")))
+  (editor-draw-text 0 0 code-style "Lorem ipsum las dolor"))
 
 #|
   attrs:

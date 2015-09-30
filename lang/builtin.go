@@ -2,6 +2,7 @@ package lang
 
 import (
 	"errors"
+	"strconv"
 )
 
 var builtinType *FuncValue = &FuncValue{
@@ -192,9 +193,33 @@ func init() {
 		Name:     "define",
 		ArgNames: []string{"name", "value"},
 		Fn: func(env *Env, args []Value) (Value, error) {
-			if err := AssertArgsCount("Builtin 'define'", args, 2); err != nil {
+			if err := AssertArgsMinCount("Builtin 'define'", args, 2); err != nil {
 				return nil, err
 			}
+
+			// Check if params #1 is list, if so, define function instead
+			if args[0].Type() == V_LIST {
+				childs := args[0].(ListValue).Childs
+				if len(childs) < 1 {
+					return nil, errors.New("Builtin 'define' parameter '1' needs at least one item in it")
+				}
+				for i, child := range childs {
+					if err := AssertType("Builtin 'define'", "formals["+strconv.FormatInt(int64(i), 10)+"]", child, V_SYMBOL); err != nil {
+						return nil, err
+					}
+				}
+
+				return Eval(ListValue{[]Value{
+					SymbolValue{"define"},
+					childs[0],
+					ListValue{append([]Value{
+						SymbolValue{"lambda"},
+						ListValue{childs[1:]},
+					}, args[1:]...)},
+				}}, env)
+			}
+
+			// Else assign value in root env
 			if err := AssertType("Builtin 'define'", "1", args[0], V_SYMBOL); err != nil {
 				return nil, err
 			}
