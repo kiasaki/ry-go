@@ -38,6 +38,7 @@ func NewBuiltinFilledEnv() *Env {
 	env.Set("-", builtinSubtract)
 	env.Set("*", builtinMultiply)
 	env.Set("/", builtinDivide)
+	env.Set("floor", builtinFloor)
 
 	env.Set("type", builtinType)
 	env.Set("eq?", builtinEq)
@@ -45,15 +46,29 @@ func NewBuiltinFilledEnv() *Env {
 	env.Set("cdr", builtinCdr)
 	env.Set("cons", builtinCons)
 	env.Set("append", builtinAppend)
+	// reverse
 	env.Set("length", builtinLength)
+	env.Set("list-ref", builtinListRef)
+	env.Set("list-set!", builtinListSet)
 
 	env.Set("list", builtinList)
 	env.Set("string", builtinString)
 
 	env.Set("quote", builtinQuote)
+	env.Set("unquote", builtinUnquote)
+	env.Set("eval", builtinEval)
 	env.Set("define", builtinDefine)
-	env.Set("set", builtinSet)
+	env.Set("set!", builtinSet)
 	env.Set("lambda", builtinLambda)
+	env.Set("defmacro", builtinDefmacro)
+
+	env.Set("if", builtinIf)
+	env.Set("cond", builtinCond)
+	env.Set("begin", builtinBegin)
+
+	env.Set("error", builtinError)
+	env.Set("read", builtinRead)
+	env.Set("write", builtinWrite)
 
 	return env
 }

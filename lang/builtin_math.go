@@ -2,6 +2,7 @@ package lang
 
 import (
 	"errors"
+	"math"
 )
 
 func builtinOp(op string, args []Value) (Value, error) {
@@ -16,7 +17,7 @@ func builtinOp(op string, args []Value) (Value, error) {
 
 	if (left.Type() != V_INTEGER && left.Type() != V_FLOAT) || (right.Type() != V_INTEGER && right.Type() != V_FLOAT) {
 		// type check
-		return nil, errors.New("Arguments passed to '" + op + "' arn't of type int or float. " + left.String() + " and " + right.String() + " passed")
+		return nil, errors.New("Arguments passed to '" + op + "' aren't of type int or float. " + left.String() + " and " + right.String() + " passed")
 	}
 
 	if left.Type() == V_FLOAT || right.Type() == V_FLOAT {
@@ -83,3 +84,19 @@ var builtinAdd = buildBuiltinOp("+")
 var builtinSubtract = buildBuiltinOp("-")
 var builtinMultiply = buildBuiltinOp("*")
 var builtinDivide = buildBuiltinOp("/")
+
+var builtinFloor *FuncValue = &FuncValue{
+	Name:     "floor",
+	ArgNames: []string{"num"},
+	Fn: func(env *Env, args []Value) (Value, error) {
+		if args[0].Type() != V_INTEGER && args[0].Type() != V_FLOAT {
+			return nil, errors.New("Argument passed to 'floor' isn't of type int or float. " + args[0].String() + " passed")
+		}
+
+		if args[0].Type() == V_INTEGER {
+			return args[0], nil
+		} else {
+			return IntegerValue{int64(math.Floor(args[0].(FloatValue).Value))}, nil
+		}
+	},
+}

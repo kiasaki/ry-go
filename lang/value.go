@@ -148,7 +148,7 @@ func (v FuncValue) String() string {
 }
 
 func (v *FuncValue) Call(args []Value, parentEnv *Env) (Value, error) {
-	if env, err := createEnvAndAssignArgs(parentEnv, args, v.ArgNames); err != nil {
+	if env, err := createEnvAndAssignArgs(v.Name, parentEnv, args, v.ArgNames); err != nil {
 		return nil, err
 	} else {
 		return v.Fn(env, args)
@@ -196,15 +196,41 @@ func (v MacroValue) String() string {
 }
 
 func (v *MacroValue) Call(args []Value, parentEnv *Env) (Value, error) {
-	if env, err := createEnvAndAssignArgs(parentEnv, args, v.ArgNames); err != nil {
+	if env, err := createEnvAndAssignArgs(v.Name, parentEnv, args, v.ArgNames); err != nil {
 		return nil, err
 	} else {
 		return v.Fn(env, args)
 	}
 }
 
+func NewMacro(name string, fn func(*Env, []Value) (Value, error), argNames Value) (*MacroValue, error) {
+	if name == "" {
+		name = "*macro*"
+	}
+
+	if argNames.Type() != V_LIST {
+		return nil, errors.New("Can't create a macro, passed a non-list for argument names")
+	}
+
+	argNamesString := []string{}
+	for _, arg := range argNames.(ListValue).Childs {
+		// TODO handle "." as rest arg
+		if arg.Type() == V_SYMBOL {
+			argNamesString = append(argNamesString, arg.(SymbolValue).Value)
+		} else {
+			return nil, errors.New("Can't define macro '" + name + "' because param " + arg.String() + " is not a symbol")
+		}
+	}
+
+	return &MacroValue{
+		Name:     name,
+		Fn:       fn,
+		ArgNames: argNamesString,
+	}, nil
+}
+
 /* utils */
-func createEnvAndAssignArgs(parentEnv *Env, args []Value, argNames []string) (*Env, error) {
+func createEnvAndAssignArgs(fnName string, parentEnv *Env, args []Value, argNames []string) (*Env, error) {
 	env := NewRootEnv()
 	env.Parent = parentEnv
 	for i, argName := range argNames {
@@ -217,13 +243,13 @@ func createEnvAndAssignArgs(parentEnv *Env, args []Value, argNames []string) (*E
 				}
 				return env, nil
 			} else {
-				return nil, errors.New("Function argument list can't end with '.'. Add a rest argument name")
+				return nil, errors.New("Function '" + fnName + "' argument list can't end with '.'. Add a rest argument name")
 			}
 		}
 		if i < len(args) {
 			env.Set(argName, args[i])
 		} else {
-			return nil, errors.New("Function argument named '" + argName + "' wasn't passed value. Expected argument count " + strconv.FormatInt(int64(len(argNames)), 10) + ". Got " + strconv.FormatInt(int64(len(args)), 10))
+			return nil, errors.New("Function '" + fnName + "' argument named '" + argName + "' wasn't passed value. Expected argument count " + strconv.FormatInt(int64(len(argNames)), 10) + ". Got " + strconv.FormatInt(int64(len(args)), 10))
 		}
 	}
 	return env, nil

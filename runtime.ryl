@@ -1,38 +1,213 @@
-(define status-bar-text "--**--runtime.ryl----")
+(define (not v)
+  (if (eq? v #f)
+    #t
+    #f))
 
-(define editor-initialize (lambda () ))
+(define (null? v)
+  (eq? v ()))
+
+(define (string? v)
+  (eq? (type v) "string"))
+(define (char? v)
+  (eq? (type v) "char"))
+(define (integer? v)
+  (eq? (type v) "integer"))
+(define (float? v)
+  (eq? (type v) "float"))
+(define (boolean? v)
+  (eq? (type v) "bool"))
+(define (function? v)
+  (eq? (type v) "func"))
+
+#|
+*** UTILS ***
+|#
+;; attrs: none bold dim under blink rev hid
+;; colors: black red green yellow blue magenta cyan gray default light-*
+(define cell-style (lambda (attr fg bg)
+  (list attr fg bg)))
+
+#|
+*** BUFFERS ***
+|#
+(define (new-buffer name)
+  (list
+    #f ; active
+    name ; name
+    () ; contents
+    () ; point
+    ))
+(define (buffer-active? buffer)
+  (list-ref buffer 0))
+(define (buffer-name buffer)
+  (list-ref buffer 1))
+(define (buffer-contents buffer)
+  (list-ref buffer 2))
+
+#|
+*** WINDOWS ***
+|#
+(define (new-window)
+  (list
+    #f ; active
+    () ; current buffer
+    ))
+(define (window-active? window)
+  (list-ref window 0))
+(define (window-buffer window)
+  (list-ref window 1))
+(define (window-buffer-set! window buffer)
+  (list-set! window 1 buffer))
+
+#|
+*** WINDOW TREE ***
+|#
+(define (new-window-tree window)
+  (new-window-tree-node 'value window ()))
+
+(define (window-tree-replace node directions new-node)
+  (cond ((null? directions)
+         new-node)
+        ((eq? (car directions) 'f)
+         (with-window-tree-node-first
+           node
+           (window-tree-replace (window-tree-node-second node) (cdr directions) new-node)))
+        ((eq? (car directions) 's)
+         (with-window-tree-node-second
+           node
+           (window-tree-replace (window-tree-node-first node) (cdr directions) new-node)))))
+
+;; parent is '() or parent node
+;; type is 'value 'horizontal or 'vertical
+;; first is left/top node
+;; second is right/bottom node
+(define (new-window-tree-node type first second)
+  (list type first second))
+
+(define (window-tree-node-type node)
+  (list-ref node 0))
+
+(define (window-tree-node-first node)
+  (list-ref node 1))
+
+(define (with-window-tree-node-first node new)
+  (list (window-tree-node-type node)
+        new
+        (window-tree-node-second node)))
+
+(define (window-tree-node-second node)
+  (list-ref node 2))
+
+(define (with-window-tree-node-second node new)
+  (list (window-tree-node-type node)
+        (window-tree-node-first node)
+        new))
+
+;; orientation :: symbol ('vertical or 'horizontal split)
+;; invert-dir :: bool (switches left for right or top for bottom)
+(define (window-tree-node-split current-node new-window orientation invert-dir)
+  (set! new-node (new-window-tree-node 'value new-window ()))
+  (new-window-tree-node
+    orientation
+    (if invert-dir new-node current-node)
+    (if invert-dir current-node new-node)))
+
+#|
+*** EDITOR ***
+|#
+(define *editor* (list
+                   (list (new-buffer "*scratch*")) ; buffers
+                   (new-window-tree (new-window)) ; window tree
+                   (cell-style 'none 'gray 'black) ; default style
+                   "Welcome to ry!" ; message bar text
+                   ))
+
+(define (editor-windows editor)
+  (list-ref editor 1))
+
+(define (editor-windows-set! editor window-tree)
+  (list-set! editor 1 window-tree))
+
+(define (editor-default-style editor)
+  (list-ref editor 2))
+
+(define (editor-message editor)
+  (list-ref editor 3))
+
+(define (current-buffer editor)
+  (car editor))
+
+(define (editor-initialize)
+  ;(set! file-contents (read "runtime.ryl"))
+  )
+
+(define (editor-render-message-bar)
+  (editor-draw-text
+    0 (- (editor-height) 1)
+    (editor-default-style *editor*)
+    (editor-message *editor*)))
+
+(define (editor-render-window win x y w h)
+  (set! status-bar-style (cell-style 'none 'black 'gray))
+  (editor-draw-text x y (editor-default-style *editor*) "Buffer Text")
+  (define loop (lambda (ly)
+     (cond ((not (eq? ly (+ y h)))
+            (editor-draw-text x ly (editor-default-style *editor*) "~")
+            (loop (+ 1 ly))))))
+  (loop (+ 1 y))
+  (editor-draw-attribute-rect x (- (+ y h) 1) w 1 status-bar-style)
+  (editor-draw-text x (- (+ y h) 1) status-bar-style "--**--")
+  )
+
+;; Traverses tree and reders individual windows evenly
+(define (editor-render-window-tree win x y w h)
+  (cond ((eq? (window-tree-node-type win) 'value)
+         (editor-render-window win x y w h))
+        ((eq? (window-tree-node-type win) 'vertical)
+         (set! half-height (floor (/ h 2)))
+         (editor-render-window-tree
+           (window-tree-node-first win) ; top
+           x y w half-height)
+         (editor-render-window-tree
+           (window-tree-node-second win) ; bottom
+           x (+ y half-height) w (- h half-height)))
+        ((eq? (window-tree-node-type win) 'horizontal)
+         (set! half-width (floor (/ w 2)))
+         (editor-render-window-tree
+           (window-tree-node-first win) ; left
+           x y half-width h)
+         (editor-render-window-tree
+           (window-tree-node-second win) ; right
+           (+ x half-width) y (- w half-width) h))))
 
 (define (editor-render)
-  (set status-bar-style (cell-style 'none 'black 'gray))
-  (set code-style (cell-style 'none 'gray 'black))
+  (editor-render-window-tree
+    (editor-windows *editor*)
+    0 0 (editor-width) (- (editor-height) 1))
+  (editor-render-message-bar))
+
+#|
+  (set! status-bar-style (cell-style 'none 'black 'gray))
+  (set! code-style (cell-style 'none 'gray 'black))
 
   (editor-draw-attribute-rect 0 0 (editor-width) (- (editor-height) 2) code-style)
   (editor-draw-attribute-rect 0 (- (editor-height) 1) (editor-width) 1 code-style)
   (editor-draw-attribute-rect 0 (- (editor-height) 2) (editor-width) 1 status-bar-style)
 
   (editor-draw-text 0 (- (editor-height) 2) status-bar-style status-bar-text)
-  (editor-draw-text 0 0 code-style "Lorem ipsum las dolor"))
+  (editor-draw-text 0 0 code-style "Lorem ipsum las dolor")
 
-#|
-  attrs:
-    - none
-    - bold
-    - dim
-    - under
-    - blink
-    - rev
-    - hid
-  colors:
-    - black
-    - red
-    - green
-    - yellow
-    - blue
-    - magenta
-    - cyan
-    - gray
-    - default
-    - light-*
+  (editor-windows-set! *editor* (window-tree-node-split
+                                  (editor-windows *editor*)
+                                  (new-window)
+                                  'horizontal
+                                  #f))
+  (editor-windows-set! *editor* (window-tree-replace
+                                  (editor-windows *editor*)
+                                  '(s)
+                                  (window-tree-node-split
+                                    (window-tree-node-second (editor-windows *editor*))
+                                    (new-window)
+                                    'vertical
+                                    #f)))
 |#
-(define cell-style (lambda (attr fg bg)
-  (list attr fg bg)))

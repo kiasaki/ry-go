@@ -105,7 +105,7 @@ func buildSyntaxParser() *sexpr.Syntax {
 	s.StringLit = []string{"\"", "\""}
 	s.RawStringLit = []string{"`", "`"}
 	s.CharLit = []string{"#\\", " "}
-	s.Delimiters = [][2]string{{"(", ")"}}
+	s.Delimiters = [][2]string{{"'(", ")"}, {"(", ")"}}
 	s.NumberFunc = sexpr.LexNumber
 	s.BooleanFunc = func(l *sexpr.Lexer) int {
 		if ret := l.AcceptLiteral("#t"); ret != 0 {
