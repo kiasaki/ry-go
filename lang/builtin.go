@@ -16,8 +16,16 @@ var builtinType *FuncValue = &FuncValue{
 }
 
 var builtinEq *FuncValue
+var builtinCar *FuncValue
+var builtinCdr *FuncValue
+var builtinCons *FuncValue
+var builtinAppend *FuncValue
+var builtinLength *FuncValue
+
 var builtinList *FuncValue
 var builtinString *FuncValue
+
+var builtinQuote *MacroValue
 var builtinDefine *MacroValue
 var builtinSet *MacroValue
 var builtinLambda *MacroValue
@@ -73,6 +81,74 @@ func init() {
 			return BoolValueFalse, nil
 		},
 	}
+	builtinCar = &FuncValue{
+		Name:     "car",
+		ArgNames: []string{"lst"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			if err := AssertArgsCount("Builtin 'car'", args, 1); err != nil {
+				return nil, err
+			}
+			if err := AssertType("Builtin 'car'", "1", args[0], V_LIST); err != nil {
+				return nil, err
+			}
+			return args[0].(ListValue).Childs[0], nil
+		},
+	}
+	builtinCdr = &FuncValue{
+		Name:     "cdr",
+		ArgNames: []string{"lst"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			if err := AssertArgsCount("Builtin 'cdr'", args, 1); err != nil {
+				return nil, err
+			}
+			if err := AssertType("Builtin 'cdr'", "1", args[0], V_LIST); err != nil {
+				return nil, err
+			}
+			return ListValue{args[0].(ListValue).Childs[1:]}, nil
+		},
+	}
+	builtinCons = &FuncValue{
+		Name:     "cons",
+		ArgNames: []string{"value", "lst"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			if err := AssertArgsCount("Builtin 'cons'", args, 2); err != nil {
+				return nil, err
+			}
+			if err := AssertType("Builtin 'cons'", "2", args[1], V_LIST); err != nil {
+				return nil, err
+			}
+
+			return ListValue{append([]Value{args[0]}, args[1].(ListValue).Childs...)}, nil
+		},
+	}
+	builtinAppend = &FuncValue{
+		Name:     "append",
+		ArgNames: []string{"value", "lst"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			if err := AssertArgsCount("Builtin 'append'", args, 2); err != nil {
+				return nil, err
+			}
+			if err := AssertType("Builtin 'append'", "2", args[1], V_LIST); err != nil {
+				return nil, err
+			}
+
+			return ListValue{append(args[1].(ListValue).Childs, args[0])}, nil
+		},
+	}
+	builtinLength = &FuncValue{
+		Name:     "length",
+		ArgNames: []string{"lst"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			if err := AssertArgsCount("Builtin 'length'", args, 1); err != nil {
+				return nil, err
+			}
+			if err := AssertType("Builtin 'length'", "1", args[0], V_LIST); err != nil {
+				return nil, err
+			}
+
+			return IntegerValue{int64(len(args[0].(ListValue).Childs))}, nil
+		},
+	}
 
 	builtinList = &FuncValue{
 		Name:     "list",
@@ -101,6 +177,17 @@ func init() {
 		},
 	}
 
+	builtinQuote = &MacroValue{
+		Name:     "quote",
+		ArgNames: []string{"value"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			if err := AssertArgsCount("Builtin 'quote'", args, 1); err != nil {
+				return nil, err
+			}
+
+			return args[0], nil
+		},
+	}
 	builtinDefine = &MacroValue{
 		Name:     "define",
 		ArgNames: []string{"name", "value"},
@@ -120,7 +207,6 @@ func init() {
 			}
 		},
 	}
-
 	builtinSet = &MacroValue{
 		Name:     "set",
 		ArgNames: []string{"name", "value"},
@@ -140,7 +226,6 @@ func init() {
 			}
 		},
 	}
-
 	builtinLambda = &MacroValue{
 		Name:     "lambda",
 		ArgNames: []string{"args", ".", "body"},

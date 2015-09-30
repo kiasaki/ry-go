@@ -35,6 +35,7 @@ func (e *Editor) Start() {
 	defer func() {
 		termo.Stop()
 		if err := recover(); err != nil {
+			// debug panic(err)
 			fmt.Println(err)
 			os.Exit(1)
 		}
@@ -77,7 +78,7 @@ func (e *Editor) startLispRuntime() {
 	}
 
 	// Register native Go functions
-	// TODO register die func
+	e.registerLispFunctions()
 
 	// Call init
 	e.EvalLisp("(editor-initialize)")
@@ -99,6 +100,18 @@ func (e *Editor) EvalLispExpressions(exprs []lang.Value) {
 	}
 }
 
+func (e *Editor) defineLispFunc(name string, argNames []string, fn func(*lang.Env, []lang.Value) (lang.Value, error)) {
+	e.EvalLispExpressions([]lang.Value{lang.ListValue{[]lang.Value{
+		lang.SymbolValue{"define"},
+		lang.SymbolValue{name},
+		lang.FuncValue{
+			Name:     name,
+			ArgNames: argNames,
+			Fn:       fn,
+		},
+	}}})
+}
+
 func (e *Editor) MainLoop() {
 	for {
 		// Check for terminal resize
@@ -111,7 +124,7 @@ func (e *Editor) MainLoop() {
 		// Clear framebuffer
 		e.framebuffer.Clear()
 
-		e.Render(e.framebuffer)
+		e.EvalLisp("(editor-render)")
 
 		// Read keyboard
 		select {
@@ -126,15 +139,8 @@ func (e *Editor) MainLoop() {
 	}
 }
 
-func (e *Editor) Render(f *termo.Framebuffer) {
-	e.EvalLisp("(editor-render)")
-	statusLine := []rune("--**")
-	f.AttribText(0, e.height-2, termo.CellState{
-		termo.AttrNone,
-		termo.ColorBlack,
-		termo.ColorGray,
-	}, string(padString(statusLine, '-', e.width)))
-	f.AttribRect(0, 0, e.width, e.height-2, termo.CellState{
+func (e *Editor) Render() {
+	e.framebuffer.AttribRect(0, 0, e.width, e.height-2, termo.CellState{
 		termo.AttrNone,
 		termo.ColorGray,
 		termo.ColorBlack,
@@ -155,10 +161,14 @@ func (e *Editor) handleScanCode(s termo.ScanCode) {
 		r := s.Rune()
 		// Exit if Ctrl+C or Esc are pressed
 		if r == 3 || r == 27 {
-			e.framebuffer.Clear()
-			e.framebuffer.Flush()
-			termo.Stop()
-			os.Exit(0)
+			e.Quit()
 		}
 	}
+}
+
+func (e *Editor) Quit() {
+	e.framebuffer.Clear()
+	e.framebuffer.Flush()
+	termo.Stop()
+	os.Exit(0)
 }

@@ -41,10 +41,16 @@ func NewBuiltinFilledEnv() *Env {
 
 	env.Set("type", builtinType)
 	env.Set("eq?", builtinEq)
+	env.Set("car", builtinCar)
+	env.Set("cdr", builtinCdr)
+	env.Set("cons", builtinCons)
+	env.Set("append", builtinAppend)
+	env.Set("length", builtinLength)
 
 	env.Set("list", builtinList)
 	env.Set("string", builtinString)
 
+	env.Set("quote", builtinQuote)
 	env.Set("define", builtinDefine)
 	env.Set("set", builtinSet)
 	env.Set("lambda", builtinLambda)

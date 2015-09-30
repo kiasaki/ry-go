@@ -38,6 +38,7 @@ func readNodes(nodes []*sexpr.Node) ([]Value, error) {
 		if err != nil {
 			return nil, err
 		}
+		// In case we hit non-value tokens, like comments
 		if value != nil {
 			values = append(values, value)
 		}
@@ -60,7 +61,11 @@ func readASTNode(node *sexpr.Node) (Value, error) {
 			}
 		}
 	case sexpr.TokIdent:
-		return SymbolValue{nodeValue}, nil
+		if nodeValue[0] == '\'' {
+			return ListValue{[]Value{SymbolValue{"quote"}, SymbolValue{nodeValue[1:]}}}, nil
+		} else {
+			return SymbolValue{nodeValue}, nil
+		}
 	case sexpr.TokString:
 		return StringValue{nodeValue}, nil
 	case sexpr.TokRawString:
@@ -86,6 +91,9 @@ func readASTNode(node *sexpr.Node) (Value, error) {
 		} else {
 			return BoolValueFalse, nil
 		}
+
+	case sexpr.TokComment:
+		return nil, nil
 	}
 
 	return nil, errors.New("Couln't parse invalid token '" + nodeValue + "'")
@@ -96,7 +104,7 @@ func buildSyntaxParser() *sexpr.Syntax {
 
 	s.StringLit = []string{"\"", "\""}
 	s.RawStringLit = []string{"`", "`"}
-	s.CharLit = []string{"'", "'"}
+	s.CharLit = []string{"#\\", " "}
 	s.Delimiters = [][2]string{{"(", ")"}}
 	s.NumberFunc = sexpr.LexNumber
 	s.BooleanFunc = func(l *sexpr.Lexer) int {

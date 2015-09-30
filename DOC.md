@@ -1,25 +1,19 @@
 # API
 
-## Buffers
-
-### Native (Go)
-
-`make-buffer name filename` Creates a new buffer instance
-
 ## Editor
 
 ### Native (Go)
 
-`start-editor` Start the editor and inits the frontend
+`(die "error message")`
 
-`stop-editor` Stops the editor and closes the frontend
+`(quit)`
 
-`editor-keypresses-chan` Return the channel with incoming keypresses
+`(editor-height)`
 
-`clear-editor` Fills the screen with the default background color
+`(editor-width)`
 
-`set-cell` Takes x, y, character, fg, bg
+### Runtime (ry-lisp)
 
-### Runtime (syp)
+`(editor-initialize)`
 
-`quit` Stops the editor and exits
+`(editor-render)`

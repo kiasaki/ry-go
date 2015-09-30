@@ -55,11 +55,21 @@ func Call(fn Value, args []Value, env *Env) (Value, error) {
 		return nil, errors.New("Trying to call non-function " + fn.String())
 	}
 
-	if fn.Type() == V_FUNC {
+	// TODO I should be able to only have pointer or not
+	switch fn.(type) {
+	case FuncValue:
+		callee := fn.(FuncValue)
+		return callee.Call(args, env)
+	case *FuncValue:
 		callee := fn.(*FuncValue)
 		return callee.Call(args, env)
-	} else {
+	case MacroValue:
+		callee := fn.(MacroValue)
+		return callee.Call(args, env)
+	case *MacroValue:
 		callee := fn.(*MacroValue)
 		return callee.Call(args, env)
 	}
+
+	panic("Unreachable")
 }

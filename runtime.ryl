@@ -1,1 +1,38 @@
-(define editor-initialize (lambda ()))
+(define status-bar-text "--**--runtime.ryl----")
+
+(define editor-initialize (lambda () ))
+
+(define editor-render (lambda ()
+  (set status-bar-style (cell-style 'none 'black 'gray))
+  (set code-style (cell-style 'none 'gray 'light-black))
+
+  (editor-draw-attribute-rect 0 0 (editor-width) (- (editor-height) 2) code-style)
+  (editor-draw-attribute-rect 0 (- (editor-height) 1) (editor-width) 1 code-style)
+  (editor-draw-attribute-rect 0 (- (editor-height) 2) (editor-width) 1 status-bar-style)
+
+  (editor-draw-text 0 (- (editor-height) 2) status-bar-style status-bar-text)
+  (editor-draw-text 0 0 code-style "Lorem ipsum las dolor")))
+
+#|
+  attrs:
+    - none
+    - bold
+    - dim
+    - under
+    - blink
+    - rev
+    - hid
+  colors:
+    - black
+    - red
+    - green
+    - yellow
+    - blue
+    - magenta
+    - cyan
+    - gray
+    - default
+    - light-*
+|#
+(define cell-style (lambda (attr fg bg)
+  (list attr fg bg)))
