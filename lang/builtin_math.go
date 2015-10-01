@@ -47,6 +47,14 @@ func builtinOp(op string, args []Value) (Value, error) {
 				return nil, errors.New("Can't divide " + left.String() + " by 0")
 			}
 			return FloatValue{leftVal / rightVal}, nil
+		case "<":
+			return BoolValue{leftVal < rightVal}, nil
+		case ">":
+			return BoolValue{leftVal > rightVal}, nil
+		case "<=":
+			return BoolValue{leftVal <= rightVal}, nil
+		case ">=":
+			return BoolValue{leftVal >= rightVal}, nil
 		}
 	} else {
 		// int op
@@ -65,6 +73,14 @@ func builtinOp(op string, args []Value) (Value, error) {
 				return nil, errors.New("Can't divide " + left.String() + " by 0")
 			}
 			return IntegerValue{leftVal / rightVal}, nil
+		case "<":
+			return BoolValue{leftVal < rightVal}, nil
+		case ">":
+			return BoolValue{leftVal > rightVal}, nil
+		case "<=":
+			return BoolValue{leftVal <= rightVal}, nil
+		case ">=":
+			return BoolValue{leftVal >= rightVal}, nil
 		}
 	}
 	return nil, errors.New("Bad call to builtin_math.go:builtinOp, reached return")
@@ -84,6 +100,10 @@ var builtinAdd = buildBuiltinOp("+")
 var builtinSubtract = buildBuiltinOp("-")
 var builtinMultiply = buildBuiltinOp("*")
 var builtinDivide = buildBuiltinOp("/")
+var builtinSmallerThan = buildBuiltinOp("<")
+var builtinBiggerThan = buildBuiltinOp(">")
+var builtinSmallerThanEq = buildBuiltinOp("<=")
+var builtinBiggerThanEq = buildBuiltinOp(">=")
 
 var builtinFloor *FuncValue = &FuncValue{
 	Name:     "floor",

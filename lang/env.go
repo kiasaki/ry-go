@@ -38,6 +38,10 @@ func NewBuiltinFilledEnv() *Env {
 	env.Set("-", builtinSubtract)
 	env.Set("*", builtinMultiply)
 	env.Set("/", builtinDivide)
+	env.Set("<", builtinSmallerThan)
+	env.Set(">", builtinBiggerThan)
+	env.Set("<=", builtinSmallerThanEq)
+	env.Set(">=", builtinBiggerThanEq)
 	env.Set("floor", builtinFloor)
 
 	env.Set("type", builtinType)
@@ -50,6 +54,8 @@ func NewBuiltinFilledEnv() *Env {
 	env.Set("length", builtinLength)
 	env.Set("list-ref", builtinListRef)
 	env.Set("list-set!", builtinListSet)
+	env.Set("string-regexp-split", builtinStringRegexpSplit)
+	env.Set("string-length", builtinStringLength)
 
 	env.Set("list", builtinList)
 	env.Set("string", builtinString)
@@ -59,6 +65,10 @@ func NewBuiltinFilledEnv() *Env {
 	env.Set("eval", builtinEval)
 	env.Set("define", builtinDefine)
 	env.Set("set!", builtinSet)
+	env.Set("let", builtinLet)
+	env.Set("let*", builtinLetStar)
+	env.Set("letrec", builtinLetRec)
+	env.Set("letrec*", builtinLetRecStar)
 	env.Set("lambda", builtinLambda)
 	env.Set("defmacro", builtinDefmacro)
 

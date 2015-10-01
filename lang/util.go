@@ -25,7 +25,7 @@ func AssertArgsMinCount(what string, args []Value, expectedCount int) error {
 
 func AssertType(what string, argName string, arg Value, expectedType ValueType) error {
 	if arg.Type() != expectedType {
-		return errors.New(what + " expected argument " + argName + " to be of type " + TypeName(expectedType) + ". " + TypeName(arg.Type()) + " given")
+		return errors.New(what + " expected argument " + argName + " to be of type " + TypeName(expectedType) + ". " + TypeName(arg.Type()) + " '" + arg.String() + "' given")
 	}
 	return nil
 }

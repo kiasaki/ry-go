@@ -27,22 +27,34 @@
 (define cell-style (lambda (attr fg bg)
   (list attr fg bg)))
 
+(define (with-cell-style-attr cell attr)
+  (list attr (list-ref cell 1) (list-ref cell 2)))
+
+(define (with-cell-style-fg cell fg)
+  (list (list-ref cell 0) fg (list-ref cell 2)))
+
+(define (with-cell-style-bg cell bg)
+  (list (list-ref cell 0) (list-ref cell 1) bg))
+
 #|
 *** BUFFERS ***
 |#
 (define (new-buffer name)
   (list
-    #f ; active
     name ; name
     () ; contents
-    () ; point
+    (list 0 0) ; point
     ))
-(define (buffer-active? buffer)
-  (list-ref buffer 0))
 (define (buffer-name buffer)
-  (list-ref buffer 1))
+  (list-ref buffer 0))
 (define (buffer-contents buffer)
-  (list-ref buffer 2))
+  (list-ref buffer 1))
+
+(define (new-buffer-from-file filename)
+  (list
+    filename
+    (string-regexp-split "\n" (read filename))
+    (list 0 0)))
 
 #|
 *** WINDOWS ***
@@ -54,6 +66,8 @@
     ))
 (define (window-active? window)
   (list-ref window 0))
+(define (window-active-set! window active)
+  (list-set! window 0 active))
 (define (window-buffer window)
   (list-ref window 1))
 (define (window-buffer-set! window buffer)
@@ -67,15 +81,29 @@
 
 (define (window-tree-replace node directions new-node)
   (cond ((null? directions)
-         new-node)
+        new-node)
         ((eq? (car directions) 'f)
-         (with-window-tree-node-first
-           node
-           (window-tree-replace (window-tree-node-second node) (cdr directions) new-node)))
+        (with-window-tree-node-first
+          node
+          (window-tree-replace (window-tree-node-second node) (cdr directions) new-node)))
         ((eq? (car directions) 's)
-         (with-window-tree-node-second
-           node
-           (window-tree-replace (window-tree-node-first node) (cdr directions) new-node)))))
+        (with-window-tree-node-second
+          node
+          (window-tree-replace (window-tree-node-first node) (cdr directions) new-node)))))
+
+(define (window-tree-map node fn)
+  (cond ((eq? (window-tree-node-type node) 'value)
+          (fn (window-tree-node-first node)))
+        (#t
+          (window-tree-map (window-tree-node-first node) fn)
+          (window-tree-map (window-tree-node-second node) fn))))
+
+(define (window-tree-find-active node)
+  (define *found-actve-window* '()) ; ugly global for lack of lets atm
+  (window-tree-map node (lambda (win)
+                          (if (window-active? win)
+                            (define *found-actve-window* win))))
+  *found-actve-window*)
 
 ;; parent is '() or parent node
 ;; type is 'value 'horizontal or 'vertical
@@ -116,11 +144,14 @@
 *** EDITOR ***
 |#
 (define *editor* (list
-                   (list (new-buffer "*scratch*")) ; buffers
+                   (list (new-buffer-from-file "runtime.ryl")) ; buffers
                    (new-window-tree (new-window)) ; window tree
                    (cell-style 'none 'gray 'black) ; default style
                    "Welcome to ry!" ; message bar text
                    ))
+
+(define (editor-buffers editor)
+  (list-ref editor 0))
 
 (define (editor-windows editor)
   (list-ref editor 1))
@@ -134,12 +165,16 @@
 (define (editor-message editor)
   (list-ref editor 3))
 
+(define (current-window editor)
+  (window-tree-find-active (editor-windows *editor*)))
+
 (define (current-buffer editor)
-  (car editor))
+  (window-buffer (current-window)))
 
 (define (editor-initialize)
-  ;(set! file-contents (read "runtime.ryl"))
-  )
+  (set! first-window-found (window-tree-node-first (editor-windows *editor*)))
+  (window-buffer-set! first-window-found (car (editor-buffers *editor*)))
+  (window-active-set! first-window-found #t))
 
 (define (editor-render-message-bar)
   (editor-draw-text
@@ -149,20 +184,41 @@
 
 (define (editor-render-window win x y w h)
   (set! status-bar-style (cell-style 'none 'black 'gray))
-  (editor-draw-text x y (editor-default-style *editor*) "Buffer Text")
-  (define loop (lambda (ly)
-     (cond ((not (eq? ly (+ y h)))
-            (editor-draw-text x ly (editor-default-style *editor*) "~")
-            (loop (+ 1 ly))))))
-  (loop (+ 1 y))
+  (if (window-active? win)
+    (set! status-bar-style (with-cell-style-attr status-bar-style 'bold)))
+
+  (set! buffer (window-buffer win))
+  (define loop
+    (lambda (line)
+      (if (not (eq? line (- h 1)))
+        (if (not (eq? line (length (buffer-contents buffer))))
+          (begin
+            (editor-draw-text x (+ y line) (editor-default-style *editor*) (list-ref (buffer-contents buffer) line))
+            (loop (+ 1 line)))))))
+  (loop 0)
+
+  ; tildes
+  (let loop ((line (length (buffer-contents buffer))))
+    (if (< line (- h 1))
+      (begin
+        (editor-draw-text x (+ y line) (editor-default-style *editor*) "~")
+        (loop (+ 1 line)))))
+
   (editor-draw-attribute-rect x (- (+ y h) 1) w 1 status-bar-style)
-  (editor-draw-text x (- (+ y h) 1) status-bar-style "--**--")
-  )
+
+  (set! status-bar-text (string "--" "--" (buffer-name buffer)))
+  (define loop (lambda ()
+                 (if (not (eq? w (string-length status-bar-text)))
+                   (set! status-bar-text (string status-bar-text "-"))
+                   (loop))))
+  (loop)
+
+  (editor-draw-text x (- (+ y h) 1) status-bar-style status-bar-text))
 
 ;; Traverses tree and reders individual windows evenly
 (define (editor-render-window-tree win x y w h)
   (cond ((eq? (window-tree-node-type win) 'value)
-         (editor-render-window win x y w h))
+         (editor-render-window (window-tree-node-first win) x y w h))
         ((eq? (window-tree-node-type win) 'vertical)
          (set! half-height (floor (/ h 2)))
          (editor-render-window-tree

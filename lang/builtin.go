@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 )
 
@@ -16,6 +17,8 @@ var builtinAppend *FuncValue
 var builtinLength *FuncValue
 var builtinListRef *FuncValue
 var builtinListSet *FuncValue
+var builtinStringRegexpSplit *FuncValue
+var builtinStringLength *FuncValue
 
 var builtinList *FuncValue
 var builtinString *FuncValue
@@ -25,6 +28,10 @@ var builtinUnquote *MacroValue
 var builtinEval *MacroValue
 var builtinDefine *MacroValue
 var builtinSet *MacroValue
+var builtinLet *MacroValue
+var builtinLetStar *MacroValue
+var builtinLetRec *MacroValue
+var builtinLetRecStar *MacroValue
 var builtinLambda *MacroValue
 var builtinDefmacro *MacroValue
 
@@ -35,6 +42,114 @@ var builtinBegin *FuncValue
 var builtinError *FuncValue
 var builtinRead *FuncValue
 var builtinWrite *FuncValue
+
+func buildLetFunc(letName string, preComputedValues, preBoundValues bool) func(*Env, []Value) (Value, error) {
+	return func(env *Env, args []Value) (Value, error) {
+		name := "Builtin '" + letName + "'"
+		if err := AssertArgsMinCount(name, args, 2); err != nil {
+			return nil, err
+		}
+
+		letEnv := NewRootEnv()
+		letEnv.Parent = env
+		var defs []Value
+		var body []Value
+
+		// handle named let
+		if args[0].Type() == V_SYMBOL {
+			if err := AssertArgsMinCount(name+" (in named form)", args, 3); err != nil {
+				return nil, err
+			}
+			body = args[2:]
+			if err := AssertType(name, "defs", args[1], V_LIST); err != nil {
+				return nil, err
+			}
+			defs = args[1].(ListValue).Childs
+
+			letEnv.Set(args[0].(SymbolValue).Value, &FuncValue{
+				Name:     args[0].(SymbolValue).Value,
+				ArgNames: []string{".", "vals"},
+				Fn: func(e *Env, args []Value) (Value, error) {
+					for i, arg := range args {
+						if i < len(defs) {
+							// we can asume it's a symbol as there is a check
+							// down there and this func wont be called before it
+							e.Set(defs[i].(SymbolValue).Value, arg)
+						}
+					}
+
+					var lastResult Value
+					var err error
+					for _, expr := range body {
+						if lastResult, err = Eval(expr, letEnv); err != nil {
+							return nil, err
+						}
+					}
+					return lastResult, nil
+				},
+			})
+		} else {
+			body = args[1:]
+			if err := AssertType(name, "defs", args[0], V_LIST); err != nil {
+				return nil, err
+			}
+			defs = args[0].(ListValue).Childs
+		}
+
+		// extract defs and body
+		for i, def := range defs {
+			if err := AssertType(name, "defs["+strconv.FormatInt(int64(i), 10)+"]", def, V_LIST); err != nil {
+				return nil, err
+			}
+			if err := AssertType(name, "defs["+strconv.FormatInt(int64(i), 10)+"][0]", def.(ListValue).Childs[0], V_SYMBOL); err != nil {
+				return nil, err
+			}
+		}
+
+		// pre bind symbols for recursive use (rec)
+		if preBoundValues {
+			for _, def := range defs {
+				castedDef := def.(ListValue).Childs
+				letEnv.Set(castedDef[0].(SymbolValue).Value, NewEmptyListValue())
+			}
+		}
+
+		// eval assignments
+		evaledResults := map[string]Value{}
+		for _, def := range defs {
+			castedDef := def.(ListValue).Childs
+			castedDefName := castedDef[0].(SymbolValue).Value
+
+			result, err := Eval(castedDef[1], letEnv)
+			if err != nil {
+				return nil, err
+			}
+
+			if preComputedValues {
+				evaledResults[castedDefName] = result
+			} else {
+				letEnv.Set(castedDefName, result)
+			}
+		}
+
+		// assign definition values if not done during evaluation
+		if !preComputedValues {
+			for key, val := range evaledResults {
+				letEnv.Set(key, val)
+			}
+		}
+
+		// eval body
+		var lastResult Value
+		var err error
+		for _, expr := range body {
+			if lastResult, err = Eval(expr, letEnv); err != nil {
+				return nil, err
+			}
+		}
+		return lastResult, nil
+	}
+}
 
 func init() {
 	builtinType = &FuncValue{
@@ -210,6 +325,50 @@ func init() {
 			return list, nil
 		},
 	}
+	builtinStringRegexpSplit = &FuncValue{
+		Name:     "string-regexp-split",
+		ArgNames: []string{"regexp", "str"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			name := "Builtin 'string-regexp-split'"
+			if err := AssertArgsCount(name, args, 2); err != nil {
+				return nil, err
+			}
+			if err := AssertType(name, "regexp", args[0], V_STRING); err != nil {
+				return nil, err
+			}
+			if err := AssertType(name, "str", args[1], V_STRING); err != nil {
+				return nil, err
+			}
+
+			regexpStr := args[0].(StringValue).Value
+			str := args[1].(StringValue).Value
+			if r, err := regexp.Compile(regexpStr); err != nil {
+				return nil, err
+			} else {
+				parts := r.Split(str, -1)
+				lispParts := []Value{}
+				for _, part := range parts {
+					lispParts = append(lispParts, StringValue{part})
+				}
+				return ListValue{lispParts}, nil
+			}
+		},
+	}
+	builtinStringLength = &FuncValue{
+		Name:     "string-length",
+		ArgNames: []string{"str"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			name := "Builtin 'string-length'"
+			if err := AssertArgsCount(name, args, 1); err != nil {
+				return nil, err
+			}
+			if err := AssertType(name, "str", args[0], V_STRING); err != nil {
+				return nil, err
+			}
+
+			return IntegerValue{int64(len([]rune(args[0].(StringValue).Value)))}, nil
+		},
+	}
 
 	builtinList = &FuncValue{
 		Name:     "list",
@@ -333,6 +492,26 @@ func init() {
 			}
 		},
 	}
+	builtinLet = &MacroValue{
+		Name:     "let",
+		ArgNames: []string{"defs", ".", "body"},
+		Fn:       buildLetFunc("let", false, false),
+	}
+	builtinLetStar = &MacroValue{
+		Name:     "let*",
+		ArgNames: []string{"defs", ".", "body"},
+		Fn:       buildLetFunc("let*", true, false),
+	}
+	builtinLetRec = &MacroValue{
+		Name:     "letrec",
+		ArgNames: []string{"defs", ".", "body"},
+		Fn:       buildLetFunc("letrec", false, true),
+	}
+	builtinLetRecStar = &MacroValue{
+		Name:     "letrec*",
+		ArgNames: []string{"defs", ".", "body"},
+		Fn:       buildLetFunc("letrec*", true, true),
+	}
 	builtinLambda = &MacroValue{
 		Name:     "lambda",
 		ArgNames: []string{"args", ".", "body"},
@@ -397,7 +576,7 @@ func init() {
 
 	builtinIf = &MacroValue{
 		Name:     "if",
-		ArgNames: []string{"cond", "then", "else"},
+		ArgNames: []string{"cond", ".", "body"},
 		Fn: func(env *Env, args []Value) (Value, error) {
 			if err := AssertArgsMinCount("Builtin 'if'", args, 2); err != nil {
 				return nil, err
