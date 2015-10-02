@@ -159,9 +159,15 @@ func (e *Editor) handleScanCode(s termo.ScanCode) {
 		}
 	} else {
 		r := s.Rune()
-		// Exit if Ctrl+C or Esc are pressed
-		if r == 3 || r == 27 {
+
+		if r == 3 {
+			// Exit if Ctrl+C is pressed
 			e.Quit()
+		} else {
+			e.EvalLispExpressions([]lang.Value{lang.ListValue{[]lang.Value{
+				lang.SymbolValue{"editor-handle-keypress"},
+				lang.CharValue{r},
+			}}})
 		}
 	}
 }

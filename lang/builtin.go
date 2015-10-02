@@ -23,6 +23,9 @@ var builtinStringLength *FuncValue
 var builtinList *FuncValue
 var builtinString *FuncValue
 
+var builtinIntegerToChar *FuncValue
+var builtinCharToInteger *FuncValue
+
 var builtinQuote *MacroValue
 var builtinUnquote *MacroValue
 var builtinEval *MacroValue
@@ -39,6 +42,7 @@ var builtinIf *MacroValue
 var builtinCond *MacroValue
 var builtinBegin *FuncValue
 
+var builtinInclude *FuncValue
 var builtinError *FuncValue
 var builtinRead *FuncValue
 var builtinWrite *FuncValue
@@ -74,7 +78,7 @@ func buildLetFunc(letName string, preComputedValues, preBoundValues bool) func(*
 						if i < len(defs) {
 							// we can asume it's a symbol as there is a check
 							// down there and this func wont be called before it
-							e.Set(defs[i].(SymbolValue).Value, arg)
+							letEnv.Set(defs[i].(ListValue).Childs[0].(SymbolValue).Value, arg)
 						}
 					}
 
@@ -397,6 +401,21 @@ func init() {
 		},
 	}
 
+	builtinIntegerToChar = &FuncValue{
+		Name:     "integer->char",
+		ArgNames: []string{"int"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			return CharValue{rune(args[0].(IntegerValue).Value)}, nil
+		},
+	}
+	builtinCharToInteger = &FuncValue{
+		Name:     "char->integer",
+		ArgNames: []string{"ch"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			return IntegerValue{int64(args[0].(CharValue).Value)}, nil
+		},
+	}
+
 	builtinQuote = &MacroValue{
 		Name:     "quote",
 		ArgNames: []string{"value"},
@@ -640,6 +659,39 @@ func init() {
 		},
 	}
 
+	builtinInclude = &FuncValue{
+		Name:     "include",
+		ArgNames: []string{".", "filenames"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			name := "Builtin 'include'"
+			if err := AssertArgsMinCount(name, args, 1); err != nil {
+				return nil, err
+			}
+
+			var lastResult []Value
+			var err error
+			for i, arg := range args {
+				if err := AssertType(name, strconv.FormatInt(int64(i), 10), arg, V_STRING); err != nil {
+					return nil, err
+				}
+				lastResult, err = ParseFile(arg.(StringValue).Value)
+				if err != nil {
+					return nil, err
+				}
+				for i, result := range lastResult {
+					lastResult[i], err = Eval(result, env)
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+			if len(lastResult) > 0 {
+				return lastResult[len(lastResult)-1], nil
+			} else {
+				return NewEmptyListValue(), nil
+			}
+		},
+	}
 	builtinError = &FuncValue{
 		Name:     "error",
 		ArgNames: []string{"message"},

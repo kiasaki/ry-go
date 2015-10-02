@@ -89,7 +89,7 @@ func (CharValue) Type() ValueType {
 	return V_CHAR
 }
 func (v CharValue) String() string {
-	return "'" + string(v.Value) + "'"
+	return "#\\" + string(v.Value)
 }
 
 /* BOOL */

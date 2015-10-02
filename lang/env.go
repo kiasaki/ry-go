@@ -60,6 +60,9 @@ func NewBuiltinFilledEnv() *Env {
 	env.Set("list", builtinList)
 	env.Set("string", builtinString)
 
+	env.Set("integer->char", builtinIntegerToChar)
+	env.Set("char->integer", builtinCharToInteger)
+
 	env.Set("quote", builtinQuote)
 	env.Set("unquote", builtinUnquote)
 	env.Set("eval", builtinEval)
@@ -76,6 +79,7 @@ func NewBuiltinFilledEnv() *Env {
 	env.Set("cond", builtinCond)
 	env.Set("begin", builtinBegin)
 
+	env.Set("include", builtinInclude)
 	env.Set("error", builtinError)
 	env.Set("read", builtinRead)
 	env.Set("write", builtinWrite)

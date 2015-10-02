@@ -1,10 +1,20 @@
 (define (not v)
-  (if (eq? v #f)
-    #t
-    #f))
+  (if v #f #t))
 
 (define (null? v)
   (eq? v ()))
+
+(define (map proc items)
+  (if (null? items)
+    '()
+    (cons (proc (car items))
+      (map proc (cdr items)))))
+
+(define (make-string len ch)
+  (let loop ((v ""))
+    (if (>= (string-length v) len)
+      v
+      (loop (string v ch)))))
 
 (define (string? v)
   (eq? (type v) "string"))
@@ -36,6 +46,14 @@
 (define (with-cell-style-bg cell bg)
   (list (list-ref cell 0) (list-ref cell 1) bg))
 
+(define (char-visible? ch)
+  (let ((ch-num (char->integer ch)))
+    (if (> ch-num 31) ; replace with and
+      (if (< ch-num 127)
+        #t
+        #f)
+      #f)))
+
 #|
 *** BUFFERS ***
 |#
@@ -45,16 +63,49 @@
     () ; contents
     (list 0 0) ; point
     ))
+
 (define (buffer-name buffer)
   (list-ref buffer 0))
+
 (define (buffer-contents buffer)
   (list-ref buffer 1))
+
+(define (buffer-point-x b)
+  (list-ref (list-ref b 2) 0))
+
+(define (buffer-point-y b)
+  (list-ref (list-ref b 2) 1))
+
+(define (buffer-point-x-set! b new-x)
+  (let ((point (list-ref b 2)))
+    (list-set! b 2 (list new-x (list-ref point 1)))))
+
+(define (buffer-point-y-set! b new-y)
+  (let ((point (list-ref b 2)))
+    (list-set! b 2 (list (list-ref point 0) new-y))))
 
 (define (new-buffer-from-file filename)
   (list
     filename
     (string-regexp-split "\n" (read filename))
     (list 0 0)))
+
+(define (move-char b n)
+  (let ((new-pos (+ (buffer-point-x b) n))
+        (current-line (list-ref (buffer-contents b) (buffer-point-y b))))
+    (if (< new-pos (string-length current-line))
+      (if (> new-pos 0)
+        (buffer-point-x-set! b new-pos)
+        (buffer-point-x-set! b 0))
+      (buffer-point-x-set! b (- (string-length current-line) 1)))))
+
+(define (move-line b n)
+  (let ((new-line (+ (buffer-point-y b) n)))
+    (if (< new-line (length (buffer-contents b)))
+      (if (> new-line 0)
+        (buffer-point-y-set! b new-line)
+        (buffer-point-y-set! b 0))
+      (buffer-point-y-set! b (- (length (buffer-contents b)) 1)))))
 
 #|
 *** WINDOWS ***
@@ -141,6 +192,62 @@
     (if invert-dir current-node new-node)))
 
 #|
+*** MODES ***
+|#
+(define (normal-mode-key-handler)
+  (lambda (key)
+    (let ((b (current-buffer *editor*)))
+      ;; here: eval last ignore keys, if num, use that for move instead of 1
+      (cond ((eq? key #\: )
+             (switch-to-mode (command-mode)))
+            ((eq? key #\h )
+             (move-char b -1))
+            ((eq? key #\j )
+             (move-line b 1))
+            ((eq? key #\k )
+             (move-line b -1))
+            ((eq? key #\l )
+             (move-char b 1))
+            (#t
+             (editor-append-to-message *editor* key))))))
+
+(define (normal-mode) (list
+                        "normal" ; name
+                        (normal-mode-key-handler) ; key handler
+                        (lambda ()
+                          (let ((b (current-buffer *editor*)))
+                            (editor-set-cursor (buffer-point-x b) (buffer-point-y b)))) ; enter func
+                        ))
+
+(define (command-mode-key-handler)
+  (lambda (key)
+    (cond ((eq? (char->integer key) 27)
+           (editor-message-set! *editor* "")
+           (switch-to-mode (normal-mode)))
+          ((char-visible? key)
+           (editor-append-to-message *editor* key)))))
+
+(define (command-mode) (list
+                         "command" ; name
+                         (command-mode-key-handler) ; key handler
+                         (lambda ()
+                           (editor-write-message *editor* ":")) ; enter func
+                         ))
+
+(define (switch-to-mode mode)
+  (editor-mode-set! *editor* mode)
+  ((mode-enter mode)))
+
+(define (mode-name mode)
+  (list-ref mode 0))
+
+(define (mode-key-handler mode)
+  (list-ref mode 1))
+
+(define (mode-enter mode)
+  (list-ref mode 2))
+
+#|
 *** EDITOR ***
 |#
 (define *editor* (list
@@ -148,6 +255,7 @@
                    (new-window-tree (new-window)) ; window tree
                    (cell-style 'none 'gray 'black) ; default style
                    "Welcome to ry!" ; message bar text
+                   (normal-mode) ; mode
                    ))
 
 (define (editor-buffers editor)
@@ -165,16 +273,32 @@
 (define (editor-message editor)
   (list-ref editor 3))
 
+(define (editor-message-set! editor message)
+  (list-set! editor 3 message))
+
+(define (editor-mode editor)
+  (list-ref editor 4))
+
+(define (editor-mode-set! editor mode)
+  (list-set! editor 4 mode))
+
+(define (editor-write-message editor message)
+  (editor-message-set! editor message)
+  (editor-set-cursor (string-length message) (- (editor-height) 1)))
+
+(define (editor-append-to-message editor str-to-append)
+  (editor-write-message editor (string (editor-message editor) str-to-append)))
+
 (define (current-window editor)
   (window-tree-find-active (editor-windows *editor*)))
 
 (define (current-buffer editor)
-  (window-buffer (current-window)))
+  (window-buffer (current-window editor)))
 
 (define (editor-initialize)
-  (set! first-window-found (window-tree-node-first (editor-windows *editor*)))
-  (window-buffer-set! first-window-found (car (editor-buffers *editor*)))
-  (window-active-set! first-window-found #t))
+  (let ((first-window-found (window-tree-node-first (editor-windows *editor*))))
+    (window-buffer-set! first-window-found (car (editor-buffers *editor*)))
+    (window-active-set! first-window-found #t)))
 
 (define (editor-render-message-bar)
   (editor-draw-text
@@ -184,10 +308,20 @@
 
 (define (editor-render-window win x y w h)
   (set! status-bar-style (cell-style 'none 'black 'gray))
-  (if (window-active? win)
-    (set! status-bar-style (with-cell-style-attr status-bar-style 'bold)))
-
   (set! buffer (window-buffer win))
+
+  (if (window-active? win)
+    (begin
+      (set! status-bar-style (with-cell-style-attr status-bar-style 'bold))
+      (if (eq? (mode-name (editor-mode *editor*)) "normal") ; use or
+        (editor-set-cursor
+          (+ x (buffer-point-x buffer))
+          (+ y (buffer-point-y buffer))))
+      (if (eq? (mode-name (editor-mode *editor*)) "insert") ; use or
+        (editor-set-cursor
+          (+ x (buffer-point-x buffer))
+          (+ y (buffer-point-y buffer))))))
+
   (define loop
     (lambda (line)
       (if (not (eq? line (- h 1)))
@@ -206,14 +340,20 @@
 
   (editor-draw-attribute-rect x (- (+ y h) 1) w 1 status-bar-style)
 
-  (set! status-bar-text (string "--" "--" (buffer-name buffer)))
-  (define loop (lambda ()
-                 (if (not (eq? w (string-length status-bar-text)))
-                   (set! status-bar-text (string status-bar-text "-"))
-                   (loop))))
-  (loop)
-
-  (editor-draw-text x (- (+ y h) 1) status-bar-style status-bar-text))
+  (let ((bar-text-start (string
+                          "--"
+                          "**" ; buffer status
+                          "--"
+                          (buffer-name buffer)))
+        (bar-text-end (string
+                        (mode-name (editor-mode *editor*))
+                        "-"))
+        (bar-width (+ (string-length bar-text-start) (string-length bar-text-end)))
+        (bar-text (string
+                    bar-text-start
+                    (make-string (- w bar-width) #\- )
+                    bar-text-end)))
+    (editor-draw-text x (- (+ y h) 1) status-bar-style bar-text)))
 
 ;; Traverses tree and reders individual windows evenly
 (define (editor-render-window-tree win x y w h)
@@ -241,6 +381,9 @@
     (editor-windows *editor*)
     0 0 (editor-width) (- (editor-height) 1))
   (editor-render-message-bar))
+
+(define (editor-handle-keypress ch)
+  ((mode-key-handler (editor-mode *editor*)) ch))
 
 #|
   (set! status-bar-style (cell-style 'none 'black 'gray))

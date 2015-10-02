@@ -33,6 +33,27 @@ func (e *Editor) registerLispFunctions() {
 		},
 	)
 	e.defineLispFunc(
+		"editor-set-cursor",
+		[]string{"x", "y"},
+		func(env *lang.Env, args []lang.Value) (lang.Value, error) {
+			name := "Function 'editor-set-cursor'"
+			if err := lang.AssertArgsCount(name, args, 2); err != nil {
+				return nil, err
+			}
+			if err := lang.AssertType(name, "x", args[0], lang.V_INTEGER); err != nil {
+				return nil, err
+			}
+			if err := lang.AssertType(name, "y", args[1], lang.V_INTEGER); err != nil {
+				return nil, err
+			}
+
+			x := int(args[0].(lang.IntegerValue).Value)
+			y := int(args[1].(lang.IntegerValue).Value)
+			termo.SetCursor(x, y)
+			return lang.NewEmptyListValue(), nil
+		},
+	)
+	e.defineLispFunc(
 		"editor-height",
 		[]string{},
 		func(env *lang.Env, args []lang.Value) (lang.Value, error) {
