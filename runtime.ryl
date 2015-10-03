@@ -90,22 +90,26 @@
     (string-regexp-split "\n" (read filename))
     (list 0 0)))
 
-(define (move-char b n)
-  (let ((new-pos (+ (buffer-point-x b) n))
-        (current-line (list-ref (buffer-contents b) (buffer-point-y b))))
+(define (move-char-to b new-pos)
+  (let ((current-line (list-ref (buffer-contents b) (buffer-point-y b))))
     (if (< new-pos (string-length current-line))
       (if (> new-pos 0)
         (buffer-point-x-set! b new-pos)
         (buffer-point-x-set! b 0))
       (buffer-point-x-set! b (- (string-length current-line) 1)))))
 
+(define (move-char b n)
+  (move-char-to b (+ (buffer-point-x b) n)))
+
+(define (move-line-to b new-line)
+  (if (< new-line (length (buffer-contents b)))
+    (if (> new-line 0)
+      (buffer-point-y-set! b new-line)
+      (buffer-point-y-set! b 0))
+    (buffer-point-y-set! b (- (length (buffer-contents b)) 1))))
+
 (define (move-line b n)
-  (let ((new-line (+ (buffer-point-y b) n)))
-    (if (< new-line (length (buffer-contents b)))
-      (if (> new-line 0)
-        (buffer-point-y-set! b new-line)
-        (buffer-point-y-set! b 0))
-      (buffer-point-y-set! b (- (length (buffer-contents b)) 1)))))
+  (move-line-to b (+ (buffer-point-y b) n)))
 
 #|
 *** WINDOWS ***
@@ -208,8 +212,16 @@
              (move-line b -1))
             ((eq? key #\l )
              (move-char b 1))
+            ((eq? key #\0 )
+             (move-char-to b 0))
+            ((eq? key #\$ )
+             (move-char-to b 999))
+            ((eq? (char->integer key) 4) ; C-d
+             (move-line b 8)) ; make this a setting
+            ((eq? (char->integer key) 21) ; C-u
+             (move-line b -8))
             (#t
-             (editor-append-to-message *editor* key))))))
+             (editor-append-to-message *editor* (integer->string (char->integer key))))))))
 
 (define (normal-mode) (list
                         "normal" ; name
@@ -224,6 +236,8 @@
     (cond ((eq? (char->integer key) 27)
            (editor-message-set! *editor* "")
            (switch-to-mode (normal-mode)))
+          ((eq? (char->integer key) 13)
+           ) ; TODO eval lisp command
           ((char-visible? key)
            (editor-append-to-message *editor* key)))))
 
@@ -231,7 +245,7 @@
                          "command" ; name
                          (command-mode-key-handler) ; key handler
                          (lambda ()
-                           (editor-write-message *editor* ":")) ; enter func
+                           (editor-write-message *editor* "(")) ; enter func
                          ))
 
 (define (switch-to-mode mode)
@@ -254,7 +268,7 @@
                    (list (new-buffer-from-file "runtime.ryl")) ; buffers
                    (new-window-tree (new-window)) ; window tree
                    (cell-style 'none 'gray 'black) ; default style
-                   "Welcome to ry!" ; message bar text
+                   "" ; message bar text
                    (normal-mode) ; mode
                    ))
 

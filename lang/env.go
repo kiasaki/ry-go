@@ -62,6 +62,8 @@ func NewBuiltinFilledEnv() *Env {
 
 	env.Set("integer->char", builtinIntegerToChar)
 	env.Set("char->integer", builtinCharToInteger)
+	env.Set("integer->string", builtinIntegerToString)
+	env.Set("string->integer", builtinStringToInteger)
 
 	env.Set("quote", builtinQuote)
 	env.Set("unquote", builtinUnquote)

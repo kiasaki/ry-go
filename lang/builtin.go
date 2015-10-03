@@ -25,6 +25,8 @@ var builtinString *FuncValue
 
 var builtinIntegerToChar *FuncValue
 var builtinCharToInteger *FuncValue
+var builtinIntegerToString *FuncValue
+var builtinStringToInteger *FuncValue
 
 var builtinQuote *MacroValue
 var builtinUnquote *MacroValue
@@ -415,6 +417,24 @@ func init() {
 			return IntegerValue{int64(args[0].(CharValue).Value)}, nil
 		},
 	}
+	builtinIntegerToString = &FuncValue{
+		Name:     "integer->string",
+		ArgNames: []string{"int"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			return StringValue{strconv.Itoa(int(args[0].(IntegerValue).Value))}, nil
+		},
+	}
+	builtinStringToInteger = &FuncValue{
+		Name:     "string->integer",
+		ArgNames: []string{"str"},
+		Fn: func(env *Env, args []Value) (Value, error) {
+			if i, err := strconv.Atoi(args[0].(StringValue).Value); err != nil {
+				return BoolValueFalse, nil
+			} else {
+				return IntegerValue{int64(i)}, nil
+			}
+		},
+	}
 
 	builtinQuote = &MacroValue{
 		Name:     "quote",
@@ -651,11 +671,11 @@ func init() {
 		Name:     "begin",
 		ArgNames: []string{".", "exprs"},
 		Fn: func(env *Env, args []Value) (Value, error) {
-			if err := AssertArgsMinCount("Builtin 'begin'", args, 1); err != nil {
-				return nil, err
+			if len(args) > 0 {
+				return args[len(args)-1], nil
+			} else {
+				return NewEmptyListValue(), nil
 			}
-
-			return args[len(args)-1], nil
 		},
 	}
 
