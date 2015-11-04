@@ -71,6 +71,9 @@ func readASTNode(node *sexpr.Node) (Value, error) {
 	case sexpr.TokRawString:
 		return StringValue{strconv.Quote(nodeValue)}, nil
 	case sexpr.TokChar:
+		if string(nodeValue) == "space" {
+			nodeValue = " "
+		}
 		if len([]rune(nodeValue)) != 1 {
 			return nil, errors.New("Tried reading a char literal of 0 or more than 1 characters")
 		}

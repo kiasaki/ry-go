@@ -341,7 +341,10 @@
       (if (not (eq? line (- h 1)))
         (if (not (eq? line (length (buffer-contents buffer))))
           (begin
-            (editor-draw-text x (+ y line) (editor-default-style *editor*) (list-ref (buffer-contents buffer) line))
+            (letrec ((line-text (list-ref (buffer-contents buffer) line))
+                     (text (string line-text (make-string (- w (string-length line-text)) #\space )))
+                     (style (editor-default-style *editor*)))
+              (editor-draw-text x (+ y line) style text))
             (loop (+ 1 line)))))))
   (loop 0)
 
@@ -349,7 +352,9 @@
   (let loop ((line (length (buffer-contents buffer))))
     (if (< line (- h 1))
       (begin
-        (editor-draw-text x (+ y line) (editor-default-style *editor*) "~")
+        (let ((text (string "~" (make-string (- w 1) #\space )))
+              (style (editor-default-style *editor*)))
+          (editor-draw-text x (+ y line) style text))
         (loop (+ 1 line)))))
 
   (editor-draw-attribute-rect x (- (+ y h) 1) w 1 status-bar-style)

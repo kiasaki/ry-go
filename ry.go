@@ -178,3 +178,8 @@ func (e *Editor) Quit() {
 	termo.Stop()
 	os.Exit(0)
 }
+
+func StartMainEditor() {
+	editor = &Editor{}
+	editor.Start()
+}
